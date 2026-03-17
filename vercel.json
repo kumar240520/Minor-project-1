@@ -25,11 +25,7 @@
     "SUPABASE_SERVICE_ROLE_KEY": "sb_secret_ueiE8mTqtqNZlyupZ1WPsg_0srZk_ym",
     "ENABLE_LEGACY_REWARDS_API": "false"
   },
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
+
   "installCommand": "cd client && npm install",
   "buildCommand": "cd client && npm run build",
   "outputDirectory": "client/dist",
