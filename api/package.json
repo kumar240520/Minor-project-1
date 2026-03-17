@@ -1,0 +1,12 @@
+{
+  "name": "edusure-api",
+  "version": "1.0.0",
+  "description": "Serverless API functions for EduSure",
+  "main": "index.js",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

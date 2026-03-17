@@ -1,0 +1,19 @@
+{
+  "name": "edusure",
+  "version": "1.0.0",
+  "description": "EduSure - Educational Platform",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "client": "npm --prefix client run dev",
+    "server": "npm --prefix server run dev",
+    "build": "npm --prefix client run build",
+    "build:vercel": "npm --prefix client run build:vercel",
+    "build:netlify": "npm --prefix client run build:netlify",
+    "preview": "npm --prefix client run preview",
+    "lint": "npm --prefix client run lint"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
