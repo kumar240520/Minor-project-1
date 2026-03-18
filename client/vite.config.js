@@ -3,13 +3,13 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: '/', // Use absolute paths for robust routing on Netlify/Vercel
+  base: mode === 'netlify' ? '/' : '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false,
+    sourcemap: mode === 'development',
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -45,7 +45,7 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 1000, // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
   },
   resolve: {
     alias: {
@@ -59,5 +59,8 @@ export default defineConfig({
   preview: {
     port: 3000,
     host: true
+  },
+  define: {
+    __APP_ENV__: JSON.stringify(mode)
   }
-})
+}))

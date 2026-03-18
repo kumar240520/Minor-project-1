@@ -6,9 +6,9 @@ const getBaseUrl = () => {
     return 'http://localhost:5000/api';
   }
   
-  // For production, use relative paths or environment-specific URLs
-  if (import.meta.env.MODE === 'netlify') {
-    return '/.netlify/functions';
+  // For Netlify, use the deployed server URL
+  if (import.meta.env.MODE === 'netlify' || import.meta.env.VITE_PLATFORM === 'netlify') {
+    return import.meta.env.VITE_API_BASE_URL || 'https://your-server-url.com/api';
   }
   
   // Default for Vercel and other platforms

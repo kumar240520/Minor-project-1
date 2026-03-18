@@ -1,41 +1,23 @@
-# Netlify configuration for EduSure
-
 [build]
   base = "client/"
-  command = "npm run build"
-  publish = "dist/"
-  functions = "api/"
+  command = "npm run build:netlify"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_VERSION = "8"
 
 [[redirects]]
-  # API routes to serverless functions
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "https://your-server-url.com/api/:splat"
   status = 200
+  force = true
 
 [[redirects]]
-  # SPA fallback - all routes to index.html
   from = "/*"
   to = "/index.html"
   status = 200
 
-[context.production]
-  command = "npm run build"
-
-[context.deploy-preview]
-  command = "npm run build"
-
-[context.branch-deploy]
-  command = "npm run build"
-
-# Environment variables (set these in Netlify dashboard)
-[build.environment.production]
-  SUPABASE_URL = "https://acobfukuvqrehbrqnyxx.supabase.co"
-  SUPABASE_SERVICE_ROLE_KEY = "sb_secret_ueiE8mTqtqNZlyupZ1WPsg_0srZk_ym"
-
-# Headers for security and performance
 [[headers]]
   for = "/*"
   [headers.values]
@@ -46,15 +28,5 @@
 
 [[headers]]
   for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.css"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
