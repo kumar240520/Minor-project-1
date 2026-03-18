@@ -4,10 +4,11 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Menu, X, BookOpen, LogOut } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { fetchUserProfile, getRedirectPathForRole } from '../utils/auth';
+import { useSidebar } from './Sidebar';
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { isSidebarOpen, toggleSidebar } = useSidebar();
     const [session, setSession] = useState(null);
     const [role, setRole] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -182,86 +183,16 @@ const Navbar = () => {
 
                     {/* Enhanced Mobile Menu Button */}
                     <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        onClick={toggleSidebar}
                         className={`md:hidden p-2 rounded-lg transition-all ${
                             isScrolled
                                 ? 'text-gray-600 hover:text-[#60A5FA] hover:bg-[#60A5FA]/10 border border-gray-200 hover:border-[#60A5FA]/30'
                                 : 'text-white hover:text-[#86EFAC] hover:bg-white/10 border border-white/30 hover:border-[#60A5FA]/30'
                         }`}
                     >
-                        {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                        {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                     </button>
                 </div>
-
-                {/* Enhanced Mobile Menu */}
-                {isMobileMenuOpen && (
-                    <div className={`md:hidden mt-4 p-4 rounded-2xl border ${
-                        isScrolled
-                            ? 'bg-white/95 backdrop-blur-lg border-[#60A5FA]/50 shadow-xl'
-                            : 'bg-white/10 backdrop-blur-lg border-[#60A5FA]/30'
-                        }`}>
-                        <div className="space-y-3">
-                            {navLinks.map((link) => (
-                                <ScrollLink
-                                    key={link.name}
-                                    to={link.to}
-                                    smooth={true}
-                                    duration={500}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className={`block px-4 py-3 rounded-lg font-medium transition-all ${
-                                        isScrolled
-                                            ? 'text-gray-600 hover:text-[#60A5FA] hover:bg-[#60A5FA]/10 border border-transparent hover:border-[#60A5FA]/20'
-                                            : 'text-white/90 hover:text-[#86EFAC] hover:bg-white/10 border border-transparent hover:border-white/30'
-                                    }`}
-                                >
-                                    {link.name}
-                                </ScrollLink>
-                            ))}
-                        </div>
-                        <div className="mt-6 pt-4 border-t border-gray-200/20 flex flex-col space-y-3">
-                            {loading ? (
-                                <div className="h-10 w-24 bg-gradient-to-r from-[#60A5FA]/20 to-[#86EFAC]/20 animate-pulse rounded-full border border-white/30"></div>
-                            ) : session ? (
-                                <>
-                                    <RouterLink
-                                        to={dashboardPath}
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-semibold text-center border border-[#60A5FA]/30 shadow-lg hover:shadow-[#60A5FA]/50 transition-all"
-                                    >
-                                        {role === 'admin' ? 'Open Admin Panel' : 'Go to Dashboard'}
-                                    </RouterLink>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full px-4 py-3 rounded-lg text-red-500 hover:bg-red-50/50 font-semibold transition-all border border-transparent hover:border-red-200"
-                                    >
-                                        Sign Out
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <RouterLink
-                                        to="/login"
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className={`w-full px-4 py-3 rounded-lg font-semibold text-center transition-all border ${
-                                            isScrolled
-                                                ? 'text-[#60A5FA] hover:text-[#86EFAC] hover:bg-[#60A5FA]/10 border-[#60A5FA]/20'
-                                                : 'text-white hover:text-[#86EFAC] hover:bg-white/10 border-white/30'
-                                        }`}
-                                    >
-                                        Log In
-                                    </RouterLink>
-                                    <RouterLink
-                                        to="/register"
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-semibold text-center border border-[#60A5FA]/30 shadow-lg hover:shadow-[#60A5FA]/50 transition-all"
-                                    >
-                                        Sign Up
-                                    </RouterLink>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
         </nav>
     );
