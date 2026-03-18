@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { CheckCircle, Eye, FileCheck, Search, XCircle } from 'lucide-react';
-import AdminSidebar from '../../components/admin/AdminSidebar';
+import ResponsiveAdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
+import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader';
 import MaterialPreviewModal from '../../components/materials/MaterialPreviewModal';
 import useMaterialPreview from '../../hooks/useMaterialPreview';
 import { supabase } from '../../supabaseClient';
@@ -125,54 +126,57 @@ const AdminMaterials = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <AdminSidebar />
-
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-8 shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Materials Approval</h1>
-            <p className="text-sm text-slate-500">
-              Review student-uploaded notes, guides, and study resources before publishing
-            </p>
-          </div>
-
-          <div className="relative">
-            <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search title, subject, or uploader..."
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-violet-500 w-72"
-            />
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-8">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
-              <h2 className="font-semibold text-slate-800 flex items-center">
-                <FileCheck className="w-5 h-5 mr-2 text-violet-500" />
-                Pending Materials ({filteredMaterials.length})
-              </h2>
-              <span className="text-xs text-slate-500">
-                Approval reward: {APPROVAL_REWARD} Edu Coins
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <ResponsiveAdminSidebar />
+      
+      <div className="lg:ml-64 xl:ml-72">
+        <ResponsiveAdminHeader 
+          title="Materials Approval" 
+          subtitle="Review and approve study material submissions from students"
+          onMobileMenuToggle={() => {}}
+        />
+        
+        <main className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+            {/* Search and Header Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 lg:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <h2 className="font-semibold text-slate-800 flex items-center mb-2">
+                    <FileCheck className="w-5 h-5 mr-2 text-violet-500" />
+                    Pending Materials ({filteredMaterials.length})
+                  </h2>
+                  <span className="text-xs text-slate-500">
+                    Approval reward: {APPROVAL_REWARD} Edu Coins
+                  </span>
+                </div>
+                <div className="relative">
+                  <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search title, subject, or uploader..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-violet-500 w-full lg:w-72"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold">Material</th>
-                    <th className="px-6 py-3 font-semibold">Category</th>
-                    <th className="px-6 py-3 font-semibold">Uploader</th>
-                    <th className="px-6 py-3 font-semibold">Submitted</th>
-                    <th className="px-6 py-3 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
+            {/* Materials Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-3 font-semibold">Material</th>
+                      <th className="px-6 py-3 font-semibold">Category</th>
+                      <th className="px-6 py-3 font-semibold">Uploader</th>
+                      <th className="px-6 py-3 font-semibold">Submitted</th>
+                      <th className="px-6 py-3 font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
                       <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
@@ -247,18 +251,19 @@ const AdminMaterials = () => {
               </table>
             </div>
           </div>
-        </div>
-      </main>
+          </div>
+        </main>
 
-      <MaterialPreviewModal
-        isOpen={isPreviewOpen}
-        material={previewMaterial}
-        previewKind={previewKind}
-        previewUrl={previewUrl}
-        onClose={closePreview}
-        onDownload={handleDownload}
-        isDownloading={activeDownloadId === previewMaterial?.id}
-      />
+        <MaterialPreviewModal
+          isOpen={isPreviewOpen}
+          material={previewMaterial}
+          previewKind={previewKind}
+          previewUrl={previewUrl}
+          onClose={closePreview}
+          onDownload={handleDownload}
+          isDownloading={activeDownloadId === previewMaterial?.id}
+        />
+      </div>
     </div>
   );
 };

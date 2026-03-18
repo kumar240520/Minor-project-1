@@ -11,7 +11,8 @@ import {
   Search,
   XCircle,
 } from 'lucide-react';
-import AdminSidebar from '../../components/admin/AdminSidebar';
+import ResponsiveAdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
+import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader';
 import MaterialPreviewModal from '../../components/materials/MaterialPreviewModal';
 import useMaterialPreview from '../../hooks/useMaterialPreview';
 import { supabase } from '../../supabaseClient';
@@ -213,30 +214,18 @@ const AdminApprovals = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <AdminSidebar />
-
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-8 shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Pending Approvals</h1>
-            <p className="text-sm text-slate-500">
-              Review new materials and PYQs before they become visible to students
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => loadPendingApprovals({ quiet: true })}
-            disabled={refreshing}
-            className="inline-flex items-center px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh Queue
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <ResponsiveAdminSidebar />
+      
+      <div className="lg:ml-64 xl:ml-72">
+        <ResponsiveAdminHeader 
+          title="Pending Approvals" 
+          subtitle="Review new materials and PYQs before they become visible to students"
+          onMobileMenuToggle={() => {}}
+        />
+        
+        <main className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <p className="text-sm font-medium text-slate-500">Total Pending</p>
@@ -477,18 +466,19 @@ const AdminApprovals = () => {
               </p>
             </div>
           </section>
-        </div>
-      </main>
+          </div>
+        </main>
 
-      <MaterialPreviewModal
-        isOpen={isPreviewOpen}
-        material={previewMaterial}
-        previewKind={previewKind}
-        previewUrl={previewUrl}
-        onClose={closePreview}
-        onDownload={handleDownload}
-        isDownloading={activeDownloadId === previewMaterial?.id}
-      />
+        <MaterialPreviewModal
+          isOpen={isPreviewOpen}
+          material={previewMaterial}
+          previewKind={previewKind}
+          previewUrl={previewUrl}
+          onClose={closePreview}
+          onDownload={handleDownload}
+          isDownloading={activeDownloadId === previewMaterial?.id}
+        />
+      </div>
     </div>
   );
 };
