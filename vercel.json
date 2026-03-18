@@ -1,1 +1,25 @@
-{\n  "version": 2,\n  "name": "edusure",\n\n  "routes": [\n    {\n      "src": "/api/(.*)",\n      "dest": "/api/$1"\n    },\n    {\n      "src": "/(.*\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",\n      "dest": "/client/dist/$1"\n    },\n    {\n      "src": "/(.*\.(json|xml|txt))",\n      "dest": "/client/dist/$1"\n    },\n    {\n      "src": "/(.*)",\n      "dest": "/client/dist/index.html"\n    }\n  ],\n  "rewrites": [\n    {\n      "source": "/(.*)",\n      "destination": "/"\n    }\n  ],\n  "env": {\n    "SUPABASE_URL": "https://acobfukuvqrehbrqnyxx.supabase.co",\n    "SUPABASE_SERVICE_ROLE_KEY": "sb_secret_ueiE8mTqtqNZlyupZ1WPsg_0srZk_ym",\n    "ENABLE_LEGACY_REWARDS_API": "false"\n  },\n\n  "installCommand": "cd client && npm install",\n  "buildCommand": "cd client && npm run build",\n  "outputDirectory": "client/dist",\n  "framework": null\n}
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://your-server-url.com/api/$1"
+    },
+    {
+      "src": "/assets/(.*)",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "dest": "/client/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/index.html"
+    }
+  ]
+}
