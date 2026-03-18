@@ -1,13 +1,45 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
-import { Users, FileText, CalendarCheck, Award } from 'lucide-react';
+import { Users, FileText, CalendarCheck, Award, Sparkles, ArrowRight, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const stats = [
-    { id: 1, name: 'Active Students', value: 2500, suffix: '+', icon: <Users className="w-6 h-6" /> },
-    { id: 2, name: 'Verified Notes', value: 850, suffix: '+', icon: <FileText className="w-6 h-6" /> },
-    { id: 3, name: 'Events Hosted', value: 120, suffix: '+', icon: <CalendarCheck className="w-6 h-6" /> },
-    { id: 4, name: 'Coins Rewarded', value: 50, suffix: 'k+', icon: <Award className="w-6 h-6" /> },
+    { 
+        id: 1, 
+        name: 'Active Students', 
+        value: 2500, 
+        suffix: '+', 
+        icon: <Users className="w-6 h-6" />,
+        color: 'from-violet-500 to-purple-500',
+        bgColor: 'bg-gradient-to-br from-violet-50 to-purple-50'
+    },
+    { 
+        id: 2, 
+        name: 'Verified Notes', 
+        value: 850, 
+        suffix: '+', 
+        icon: <FileText className="w-6 h-6" />,
+        color: 'from-blue-500 to-indigo-500',
+        bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50'
+    },
+    { 
+        id: 3, 
+        name: 'Events Hosted', 
+        value: 120, 
+        suffix: '+', 
+        icon: <CalendarCheck className="w-6 h-6" />,
+        color: 'from-emerald-500 to-green-500',
+        bgColor: 'bg-gradient-to-br from-emerald-50 to-green-50'
+    },
+    { 
+        id: 4, 
+        name: 'Coins Rewarded', 
+        value: 50, 
+        suffix: 'k+', 
+        icon: <Award className="w-6 h-6" />,
+        color: 'from-yellow-500 to-amber-500',
+        bgColor: 'bg-gradient-to-br from-yellow-50 to-amber-50'
+    },
 ];
 
 const Counter = ({ from, to, duration = 2, suffix = "" }) => {
@@ -35,10 +67,37 @@ const Counter = ({ from, to, duration = 2, suffix = "" }) => {
 
 const StatsAndCTA = () => {
     return (
-        <div className="bg-white">
-            {/* Statistics Section */}
-            <section className="py-20 border-y border-gray-100">
+        <div className="bg-gradient-to-br from-white via-violet-50/20 to-blue-50/20 relative overflow-hidden">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-10 left-10 w-64 h-64 bg-gradient-to-br from-violet-200/30 to-purple-200/30 rounded-full blur-3xl" />
+            <div className="absolute bottom-10 right-10 w-64 h-64 bg-gradient-to-br from-blue-200/30 to-indigo-200/30 rounded-full blur-3xl" />
+            
+            {/* Enhanced Statistics Section */}
+            <section className="py-24 relative z-10">
+                {/* Decorative Borders */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-blue-500 opacity-30" />
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 opacity-30" />
+                
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="text-center mb-16"
+                    >
+                        <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 px-6 py-3 rounded-full mb-6 font-medium text-sm border border-violet-200/50">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Platform Statistics</span>
+                            <Zap className="w-4 h-4" />
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
+                            Trusted by <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Thousands</span> of Students
+                        </h2>
+                        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                            Join a thriving community of learners sharing knowledge and achieving academic excellence together.
+                        </p>
+                    </motion.div>
+                    
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
                         {stats.map((stat, index) => (
                             <motion.div
@@ -47,16 +106,36 @@ const StatsAndCTA = () => {
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                                className="text-center flex flex-col items-center group cursor-default"
+                                className="group relative"
                             >
-                                <div className="w-12 h-12 bg-violet-50 rounded-full flex items-center justify-center text-violet-600 mb-4 group-hover:scale-110 group-hover:bg-gradient-to-r from-fuchsia-600 to-violet-600 group-hover:text-white transition-all duration-300">
-                                    {stat.icon}
-                                </div>
-                                <div className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-2">
-                                    <Counter from={0} to={stat.value} duration={2.5} suffix={stat.suffix} />
-                                </div>
-                                <div className="text-sm sm:text-base font-medium text-gray-500 uppercase tracking-wide">
-                                    {stat.name}
+                                <div className="relative bg-white rounded-3xl p-8 border-2 border-gray-100 hover:border-violet-300 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                                    {/* Decorative Corner Accents */}
+                                    <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <div className="absolute bottom-0 left-0 w-8 h-8 bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 rounded-tr-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100" />
+                                    
+                                    <div className="text-center flex flex-col items-center">
+                                        <div className={`relative w-16 h-16 ${stat.bgColor} rounded-2xl flex items-center justify-center mb-6 border-2 border-white/50 shadow-lg group-hover:scale-110 transition-all duration-500`}>
+                                            <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`} />
+                                            <div className="relative z-10 text-white group-hover:text-white transition-colors duration-300">
+                                                {stat.icon}
+                                            </div>
+                                            {/* Floating Badge */}
+                                            <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
+                                        </div>
+                                        
+                                        <div className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-2 group-hover:text-violet-600 transition-colors duration-300">
+                                            <Counter from={0} to={stat.value} duration={2.5} suffix={stat.suffix} />
+                                        </div>
+                                        <div className="text-sm sm:text-base font-medium text-gray-500 uppercase tracking-wide group-hover:text-gray-700 transition-colors duration-300">
+                                            {stat.name}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Enhanced Bottom Accent */}
+                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-blue-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+                                    
+                                    {/* Hover Glow Effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-purple-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 </div>
                             </motion.div>
                         ))}
@@ -64,33 +143,75 @@ const StatsAndCTA = () => {
                 </div>
             </section>
 
-            {/* CTA Section */}
+            {/* Enhanced CTA Section */}
             <section className="py-24 relative overflow-hidden">
-                {/* Background blobs */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-violet-100 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/3 -z-10" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-100 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/3 -z-10" />
+                {/* Enhanced Background Elements */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-violet-200/40 to-purple-200/40 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/3" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-200/40 to-pink-200/40 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/3" />
+                <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-r from-blue-200/30 to-indigo-200/30 rounded-full blur-3xl opacity-40 -translate-x-1/2 -translate-y-1/2" />
+                
+                {/* Decorative Borders */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 opacity-50" />
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 via-blue-500 to-violet-500 opacity-50" />
 
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
+                        className="relative"
                     >
-                        <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
-                            Ready to Upgrade Your <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-purple-600">
-                                Academic Journey?
-                            </span>
-                        </h2>
-                        <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-                            Join thousands of students who are already using EduSure to share knowledge and ace their exams.
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Link to="/register" className="w-full sm:w-auto bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white hover:bg-violet-700 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-xl hover:shadow-violet-600/40 hover:-translate-y-1 text-center">
-                                Create Free Account
-                            </Link>
-                            <p className="sm:hidden text-sm text-gray-500 mt-2">No credit card required.</p>
+                        {/* Enhanced CTA Card */}
+                        <div className="relative bg-white/90 backdrop-blur-lg rounded-3xl p-12 border-2 border-violet-200/50 shadow-2xl overflow-hidden">
+                            {/* Decorative Background Pattern */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-violet-50/50 to-purple-50/50" />
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-full blur-2xl" />
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 rounded-full blur-2xl" />
+                            
+                            <div className="relative z-10">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.6, delay: 0.2 }}
+                                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3 rounded-full mb-8 font-medium text-sm shadow-lg"
+                                >
+                                    <Sparkles className="w-4 h-4" />
+                                    <span>Join the Community</span>
+                                    <Zap className="w-4 h-4" />
+                                </motion.div>
+                                
+                                <h2 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
+                                    Ready to Upgrade Your <br />
+                                    <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                                        Academic Journey?
+                                    </span>
+                                </h2>
+                                <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
+                                    Join thousands of students who are already using EduSure to share knowledge and ace their exams. Start your journey to academic excellence today.
+                                </p>
+                                
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                                    <Link 
+                                        to="/register" 
+                                        className="group w-full sm:w-auto bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all shadow-2xl hover:shadow-violet-600/50 hover:-translate-y-1 hover:scale-105 text-center border border-violet-400/30"
+                                    >
+                                        <span className="flex items-center justify-center space-x-2">
+                                            <span>Create Free Account</span>
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </span>
+                                    </Link>
+                                    <p className="text-sm text-gray-500 hidden sm:block">No credit card required • Free forever</p>
+                                    <p className="text-sm text-gray-500 sm:hidden">No credit card required.</p>
+                                </div>
+                            </div>
+                            
+                            {/* Enhanced Border Accents */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500" />
+                            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 via-blue-500 to-violet-500" />
+                            <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-violet-500 via-purple-500 to-pink-500" />
+                            <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-pink-500 via-blue-500 to-violet-500" />
                         </div>
                     </motion.div>
                 </div>

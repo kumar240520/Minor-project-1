@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Menu, X, BookOpen, LogOut } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { fetchUserProfile, getRedirectPathForRole } from '../utils/auth';
+
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -88,23 +89,29 @@ const Navbar = () => {
     return (
         <nav
             className={`fixed w-full z-50 transition-all duration-300 ${isScrolled
-                ? 'bg-white/80 backdrop-blur-md shadow-sm py-4'
-                : 'bg-transparent py-6'
+                ? 'bg-white/90 backdrop-blur-lg shadow-lg border-b border-[#59C1A5]/30 py-4'
+                : 'bg-gradient-to-r from-[#0B0E27]/90 via-[#0B0E27]/80 to-[#0B0E27]/95 backdrop-blur-lg border-b border-[#59C1A5]/20 py-6'
                 }`}
         >
+            {/* Decorative border accents */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#60A5FA] via-[#86EFAC] to-[#60A5FA] animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-[#86EFAC] via-[#60A5FA] to-[#86EFAC] opacity-60" />
+            <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-[#60A5FA] via-[#86EFAC] to-[#60A5FA] opacity-40" />
+            <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-[#86EFAC] via-[#60A5FA] to-[#86EFAC] opacity-40" />
+            
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center">
-                    {/* Logo */}
-                    <div className="flex items-center space-x-2 cursor-pointer">
-                        <div className="bg-gradient-to-r from-fuchsia-600 to-violet-600 p-2 rounded-lg">
+                    {/* Enhanced Logo */}
+                    <div className="flex items-center space-x-3 cursor-pointer group">
+                        <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-2.5 rounded-xl border border-white/20 shadow-lg group-hover:shadow-violet-500/50 transition-all">
                             <BookOpen className="h-6 w-6 text-white" />
                         </div>
-                        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600">
+                        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-300 to-purple-300 drop-shadow-lg">
                             EduSure
                         </span>
                     </div>
 
-                    {/* Desktop Navigation */}
+                    {/* Enhanced Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-8">
                         <div className="flex space-x-6">
                             {navLinks.map((link) => (
@@ -113,26 +120,39 @@ const Navbar = () => {
                                     to={link.to}
                                     smooth={true}
                                     duration={500}
-                                    className="text-gray-600 hover:text-violet-600 cursor-pointer font-medium transition-colors"
+                                    className={`relative px-4 py-2 rounded-lg font-medium transition-all group ${
+                                        isScrolled 
+                                            ? 'text-gray-600 hover:text-[#60A5FA] hover:bg-[#60A5FA]/10'
+                                            : 'text-white/90 hover:text-[#86EFAC] hover:bg-white/10'
+                                    }`}
                                 >
                                     {link.name}
+                                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] scale-x-0 group-hover:scale-x-100 transition-transform" />
                                 </ScrollLink>
                             ))}
                         </div>
                         <div className="flex items-center space-x-4 min-w-[160px] justify-end">
                             {loading ? (
-                                <div className="h-10 w-24 bg-gray-100 animate-pulse rounded-full"></div>
+                                <div className="h-10 w-24 bg-gradient-to-r from-[#60A5FA]/20 to-[#86EFAC]/20 animate-pulse rounded-full border border-white/30"></div>
                             ) : session ? (
                                 <>
                                     <RouterLink
                                         to={dashboardPath}
-                                        className="bg-gray-100 text-gray-800 px-5 py-2.5 rounded-full font-semibold hover:bg-gray-200 transition"
+                                        className={`px-5 py-2.5 rounded-full font-semibold transition-all border ${
+                                            isScrolled
+                                                ? 'bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white border-[#60A5FA]/30 shadow-lg hover:shadow-[#60A5FA]/50 hover:scale-105'
+                                                : 'bg-white/10 backdrop-blur-md text-white border-white/30 hover:bg-white/20 hover:scale-105'
+                                        }`}
                                     >
                                         {role === 'admin' ? 'Open Admin Panel' : 'Go to Dashboard'}
                                     </RouterLink>
                                     <button
                                         onClick={handleLogout}
-                                        className="text-gray-500 hover:text-red-500 transition-colors p-2"
+                                        className={`p-2 rounded-lg transition-all ${
+                                            isScrolled
+                                                ? 'text-gray-500 hover:text-red-500 hover:bg-red-50/50 border border-transparent hover:border-red-200'
+                                                : 'text-white/70 hover:text-red-300 hover:bg-red-500/20 border border-transparent hover:border-red-400/30'
+                                        }`}
                                     >
                                         <LogOut className="w-5 h-5" />
                                     </button>
@@ -141,92 +161,108 @@ const Navbar = () => {
                                 <>
                                     <RouterLink
                                         to="/login"
-                                        className="text-violet-600 font-semibold hover:text-violet-700 transition"
+                                        className={`px-4 py-2 rounded-lg font-semibold transition-all border ${
+                                            isScrolled
+                                                ? 'text-[#60A5FA] hover:text-[#86EFAC] hover:bg-[#60A5FA]/10 border-transparent hover:border-[#60A5FA]/30'
+                                                : 'text-white/90 hover:text-[#86EFAC] hover:bg-white/10 border border-transparent hover:border-white/30'
+                                        }`}
                                     >
                                         Log In
                                     </RouterLink>
                                     <RouterLink
                                         to="/register"
-                                        className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white px-5 py-2.5 rounded-full font-semibold hover:bg-violet-700 transition shadow-lg shadow-violet-600/20 hover:-translate-y-0.5 transform duration-200"
+                                        className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] hover:from-[#86EFAC] hover:to-[#60A5FA] text-white font-semibold transition-all shadow-lg hover:shadow-[#60A5FA]/50 border border-[#60A5FA]/30 hover:scale-105"
                                     >
-                                        Register
+                                        Sign Up
                                     </RouterLink>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <div className="md:hidden flex items-center">
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="text-gray-600 hover:text-violet-600 focus:outline-none"
-                        >
-                            {isMobileMenuOpen ? (
-                                <X className="h-6 w-6" />
-                            ) : (
-                                <Menu className="h-6 w-6" />
-                            )}
-                        </button>
-                    </div>
+                    {/* Enhanced Mobile Menu Button */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className={`md:hidden p-2 rounded-lg transition-all ${
+                            isScrolled
+                                ? 'text-gray-600 hover:text-[#60A5FA] hover:bg-[#60A5FA]/10 border border-gray-200 hover:border-[#60A5FA]/30'
+                                : 'text-white hover:text-[#86EFAC] hover:bg-white/10 border border-white/30 hover:border-[#60A5FA]/30'
+                        }`}
+                    >
+                        {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                    </button>
                 </div>
-            </div>
 
-            {/* Mobile Navigation */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100">
-                    <div className="px-4 pt-2 pb-6 space-y-2">
-                        {navLinks.map((link) => (
-                            <ScrollLink
-                                key={link.name}
-                                to={link.to}
-                                smooth={true}
-                                duration={500}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-violet-600 hover:bg-violet-50 rounded-md"
-                            >
-                                {link.name}
-                            </ScrollLink>
-                        ))}
-                        <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col space-y-3 px-3">
+                {/* Enhanced Mobile Menu */}
+                {isMobileMenuOpen && (
+                    <div className={`md:hidden mt-4 p-4 rounded-2xl border ${
+                        isScrolled
+                            ? 'bg-white/95 backdrop-blur-lg border-[#60A5FA]/50 shadow-xl'
+                            : 'bg-white/10 backdrop-blur-lg border-[#60A5FA]/30'
+                        }`}>
+                        <div className="space-y-3">
+                            {navLinks.map((link) => (
+                                <ScrollLink
+                                    key={link.name}
+                                    to={link.to}
+                                    smooth={true}
+                                    duration={500}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className={`block px-4 py-3 rounded-lg font-medium transition-all ${
+                                        isScrolled
+                                            ? 'text-gray-600 hover:text-[#60A5FA] hover:bg-[#60A5FA]/10 border border-transparent hover:border-[#60A5FA]/20'
+                                            : 'text-white/90 hover:text-[#86EFAC] hover:bg-white/10 border border-transparent hover:border-white/30'
+                                    }`}
+                                >
+                                    {link.name}
+                                </ScrollLink>
+                            ))}
+                        </div>
+                        <div className="mt-6 pt-4 border-t border-gray-200/20 flex flex-col space-y-3">
                             {loading ? (
-                                <div className="h-10 bg-gray-100 animate-pulse rounded-lg w-full"></div>
+                                <div className="h-10 w-24 bg-gradient-to-r from-[#60A5FA]/20 to-[#86EFAC]/20 animate-pulse rounded-full border border-white/30"></div>
                             ) : session ? (
                                 <>
                                     <RouterLink
                                         to={dashboardPath}
-                                        className="w-full text-center bg-violet-50 text-violet-700 font-semibold py-3 rounded-lg block"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-semibold text-center border border-[#60A5FA]/30 shadow-lg hover:shadow-[#60A5FA]/50 transition-all"
                                     >
                                         {role === 'admin' ? 'Open Admin Panel' : 'Go to Dashboard'}
                                     </RouterLink>
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center justify-center text-red-500 font-semibold py-3 border border-red-100 rounded-lg"
+                                        className="w-full px-4 py-3 rounded-lg text-red-500 hover:bg-red-50/50 font-semibold transition-all border border-transparent hover:border-red-200"
                                     >
-                                        <LogOut className="w-4 h-4 mr-2" />
-                                        Log Out
+                                        Sign Out
                                     </button>
                                 </>
                             ) : (
                                 <>
                                     <RouterLink
                                         to="/login"
-                                        className="w-full text-center text-violet-600 font-semibold py-3 border border-violet-200 rounded-lg block"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className={`w-full px-4 py-3 rounded-lg font-semibold text-center transition-all border ${
+                                            isScrolled
+                                                ? 'text-[#60A5FA] hover:text-[#86EFAC] hover:bg-[#60A5FA]/10 border-[#60A5FA]/20'
+                                                : 'text-white hover:text-[#86EFAC] hover:bg-white/10 border-white/30'
+                                        }`}
                                     >
                                         Log In
                                     </RouterLink>
                                     <RouterLink
                                         to="/register"
-                                        className="w-full text-center bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white font-semibold py-3 rounded-lg shadow-md block"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-semibold text-center border border-[#60A5FA]/30 shadow-lg hover:shadow-[#60A5FA]/50 transition-all"
                                     >
-                                        Register
+                                        Sign Up
                                     </RouterLink>
                                 </>
                             )}
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </nav>
     );
 };
