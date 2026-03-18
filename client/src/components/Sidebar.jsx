@@ -1,195 +1,176 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-    BookOpen, Settings, LogOut, Menu, X,
-    Home as HomeIcon, Folder, Calendar, Award, FileText, MessageSquare
+  BookOpen, Settings, LogOut,
+  Home as HomeIcon, Folder, Calendar, Award, FileText, MessageSquare,
+  User, Download
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-// Create a global context for sidebar state
+// Context
 const SidebarContext = React.createContext();
 
 export const useSidebar = () => {
-    const context = React.useContext(SidebarContext);
-    if (!context) {
-        throw new Error('useSidebar must be used within a SidebarProvider');
-    }
-    return context;
+  const context = React.useContext(SidebarContext);
+  if (!context) throw new Error('useSidebar must be used within SidebarProvider');
+  return context;
 };
 
 export const SidebarProvider = ({ children }) => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
-    
-    const closeSidebar = () => {
-        setIsSidebarOpen(false);
-    };
-    
-    return (
-        <SidebarContext.Provider value={{ isSidebarOpen, toggleSidebar, closeSidebar }}>
-            {children}
-        </SidebarContext.Provider>
-    );
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  return (
+    <SidebarContext.Provider
+      value={{
+        isSidebarOpen,
+        toggleSidebar: () => setIsSidebarOpen(!isSidebarOpen),
+        closeSidebar: () => setIsSidebarOpen(false)
+      }}
+    >
+      {children}
+    </SidebarContext.Provider>
+  );
 };
 
 const Sidebar = () => {
-    const { isSidebarOpen, closeSidebar } = useSidebar();
-    const location = useLocation();
+  const location = useLocation();
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-    };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
-    const menuItems = [
-        { name: 'Dashboard', icon: HomeIcon, path: '/dashboard' },
-        { name: 'PYQs', icon: FileText, path: '/pyqs' },
-        { name: 'Placement Materials', icon: BookOpen, path: '/placement-materials' },
-        { name: 'Community Post', icon: MessageSquare, path: '/community' },
-        { name: 'My Materials', icon: Folder, path: '/my-materials' },
-        { name: 'Calendar', icon: Calendar, path: '/calendar' },
-        { name: 'Rewards', icon: Award, path: '/rewards' },
-        { name: 'Settings', icon: Settings, path: '/settings' },
-    ];
+  const menuItems = [
+    { name: 'Dashboard', icon: HomeIcon, path: '/dashboard', color: '#3B82F6' },
+    { name: 'PYQs', icon: FileText, path: '/pyqs', color: '#8B5CF6' },
+    { name: 'Materials', icon: BookOpen, path: '/placement-materials', color: '#10B981' },
+    { name: 'Community', icon: MessageSquare, path: '/community', color: '#EC4899' },
+    { name: 'My Uploads', icon: Folder, path: '/my-materials', color: '#F59E0B' },
+    { name: 'Calendar', icon: Calendar, path: '/calendar', color: '#6366F1' },
+    { name: 'Rewards', icon: Award, path: '/rewards', color: '#EF4444' },
+    { name: 'Settings', icon: Settings, path: '/settings', color: '#6B7280' },
+  ];
 
-    // Mobile sidebar overlay
-    const MobileSidebar = () => (
-        <AnimatePresence>
-            {isSidebarOpen && (
-                <>
-                    {/* Backdrop */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={closeSidebar}
-                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-                    />
-                    
-                    {/* Mobile Sidebar */}
-                    <motion.aside
-                        initial={{ x: -300 }}
-                        animate={{ x: 0 }}
-                        exit={{ x: -300 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-0 left-0 z-50 w-72 h-screen bg-white border-r border-gray-200 lg:hidden"
-                    >
-                        <div className="h-full flex flex-col pt-6 pb-4">
-                            {/* Mobile Header */}
-                            <div className="px-6 flex items-center justify-between mb-8">
-                                <div className="flex items-center">
-                                    <div className="bg-gradient-to-r from-fuchsia-600 to-violet-600 p-2 rounded-lg shrink-0">
-                                        <BookOpen className="h-6 w-6 text-white" />
-                                    </div>
-                                    <span className="ml-3 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600">
-                                        EduSure
-                                    </span>
-                                </div>
-                                <button
-                                    onClick={closeSidebar}
-                                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                                >
-                                    <X className="h-5 w-5 text-gray-500" />
-                                </button>
-                            </div>
-
-                            {/* Mobile Navigation */}
-                            <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
-                                {menuItems.map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        to={item.path}
-                                        onClick={closeSidebar}
-                                        className={`flex items-center px-3 py-3 rounded-xl transition-colors ${
-                                            location.pathname === item.path
-                                                ? 'bg-violet-50 text-violet-700 font-semibold'
-                                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        <item.icon className={`h-5 w-5 ${
-                                            location.pathname === item.path ? 'text-violet-600' : 'text-gray-400'
-                                        }`} />
-                                        <span className="ml-3 whitespace-nowrap">{item.name}</span>
-                                    </Link>
-                                ))}
-                            </nav>
-
-                            {/* Mobile Logout */}
-                            <div className="px-4 mt-auto pt-4 border-t border-gray-100">
-                                <button
-                                    type="button"
-                                    onClick={handleLogout}
-                                    className="flex w-full items-center px-3 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                                >
-                                    <LogOut className="h-5 w-5 shrink-0" />
-                                    <span className="ml-3 font-medium whitespace-nowrap">Log Out</span>
-                                </button>
-                            </div>
-                        </div>
-                    </motion.aside>
-                </>
-            )}
-        </AnimatePresence>
-    );
-
-    // Desktop sidebar (always visible)
-    const DesktopSidebar = () => (
-        <motion.aside
-            className="hidden lg:flex bg-white border-r border-gray-200 fixed lg:relative z-40 h-screen transition-all duration-300 w-64"
-            initial={false}
-        >
-            <div className="h-full flex flex-col pt-6 pb-4">
-                <div className="px-6 flex items-center mb-8">
-                    <div className="bg-gradient-to-r from-fuchsia-600 to-violet-600 p-2 rounded-lg shrink-0">
-                        <BookOpen className="h-6 w-6 text-white" />
-                    </div>
-                    <span className="ml-3 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600">
-                        EduSure
-                    </span>
-                </div>
-
-                <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
-                    {menuItems.map((item) => (
-                        <Link
-                            key={item.name}
-                            to={item.path}
-                            className={`flex items-center px-3 py-3 rounded-xl transition-colors ${
-                                location.pathname === item.path
-                                    ? 'bg-violet-50 text-violet-700 font-semibold'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                            }`}
-                        >
-                            <item.icon className={`h-5 w-5 ${
-                                location.pathname === item.path ? 'text-violet-600' : 'text-gray-400'
-                            }`} />
-                            <span className="ml-3 whitespace-nowrap">{item.name}</span>
-                        </Link>
-                    ))}
-                </nav>
-
-                <div className="px-4 mt-auto pt-4 border-t border-gray-100">
-                    <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="flex w-full items-center px-3 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                    >
-                        <LogOut className="h-5 w-5 shrink-0" />
-                        <span className="ml-3 font-medium whitespace-nowrap">Log Out</span>
-                    </button>
-                </div>
-            </div>
-        </motion.aside>
-    );
+  const SidebarItem = ({ item }) => {
+    const isActive = location.pathname === item.path;
 
     return (
-        <>
-            <MobileSidebar />
-            <DesktopSidebar />
-        </>
+      <Link to={item.path} className="block w-full relative group">
+
+        {/* ✅ SINGLE BORDER SYSTEM (NO FLICKER) */}
+        <motion.div
+          className="absolute left-0 top-0 bottom-0 w-[4px] origin-top"
+          style={{
+            background: item.color,
+            boxShadow: `0 0 10px ${item.color}`
+          }}
+          initial={false}
+          animate={{
+            scaleY: isActive ? 1 : 0,
+            opacity: isActive ? 1 : 0
+          }}
+          whileHover={!isActive ? { scaleY: 1, opacity: 1 } : {}}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+        />
+
+        {/* Glow */}
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 rounded-lg"
+          style={{
+            background: `linear-gradient(to right, ${item.color}10, transparent)`
+          }}
+        />
+
+        {/* Item */}
+        <motion.div
+          whileHover={{ x: isActive ? 0 : 6 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+          className={`flex items-center w-full pl-5 pr-4 py-3 rounded-lg relative z-10 transition-all duration-300 ${
+            isActive
+              ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white'
+              : 'text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {/* Icon */}
+          <motion.div whileHover={{ scale: isActive ? 1 : 1.1 }}>
+            <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+          </motion.div>
+
+          {/* Text */}
+          <span className={`ml-3 font-semibold ${isActive ? 'text-white' : ''}`}>
+            {item.name}
+          </span>
+
+          {/* Hover dot */}
+          {!isActive && (
+            <motion.div
+              className="ml-auto w-1.5 h-1.5 rounded-full"
+              style={{ background: item.color }}
+              initial={{ opacity: 0 }}
+              whileHover={{ opacity: 1 }}
+            />
+          )}
+        </motion.div>
+      </Link>
     );
+  };
+
+  return (
+    <motion.aside
+      initial={false}
+      className="hidden lg:flex flex-col w-60 h-screen fixed top-0 left-0 bg-white border-r border-gray-200 shadow-lg z-30"
+    >
+      {/* Header */}
+      <div className="px-5 py-5 border-b border-gray-100">
+        <div className="flex items-center">
+          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-2.5 rounded-lg">
+            <BookOpen className="h-6 w-6 text-white" />
+          </div>
+          <div className="ml-3">
+            <div className="font-bold text-lg">EduSure</div>
+            <div className="text-xs text-gray-500">Student Portal</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation (small professional padding) */}
+      <nav className="flex-1 py-2 px-3">
+        {menuItems.map((item) => (
+          <SidebarItem key={item.name} item={item} />
+        ))}
+      </nav>
+
+      {/* Bottom Section */}
+      <div className="py-3 px-3 border-t border-gray-100">
+
+        {/* Profile */}
+        <Link to="/profile" className="block w-full">
+          <motion.div
+            whileHover={{ x: 6 }}
+            className="flex items-center justify-between w-full pl-5 pr-4 py-3 rounded-lg hover:bg-gray-50"
+          >
+            <div className="flex items-center">
+              <User className="h-5 w-5 text-gray-500" />
+              <span className="ml-3 font-semibold">Profile</span>
+            </div>
+            <Download className="h-4 w-4 text-gray-400" />
+          </motion.div>
+        </Link>
+
+        {/* Logout */}
+        <button onClick={handleLogout} className="w-full">
+          <motion.div
+            whileHover={{ x: 6 }}
+            className="flex items-center justify-between w-full pl-5 pr-4 py-3 rounded-lg hover:bg-red-50 text-red-600"
+          >
+            <span className="font-semibold">Log Out</span>
+            <LogOut className="h-4 w-4" />
+          </motion.div>
+        </button>
+
+      </div>
+    </motion.aside>
+  );
 };
 
 export default Sidebar;

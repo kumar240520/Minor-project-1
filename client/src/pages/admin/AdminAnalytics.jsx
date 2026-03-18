@@ -1,220 +1,464 @@
 import React, { useState, useEffect } from 'react';
-import AdminSidebar from '../../components/admin/AdminSidebar';
+import ResponsiveAdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
 import { supabase } from '../../supabaseClient';
-import { 
-    BarChart3, Users, FileText, Gift, Download, TrendingUp, TrendingDown, Clock, Activity
-} from 'lucide-react';
-import { getDisplayName } from '../../utils/auth';
 import {
-    fetchCompletedRewardTransactions,
-    fetchTransactionsWithUsers,
-    getTransactionType,
-} from '../../utils/transactions';
+    BarChart3, Users, FileText, Gift, Download, TrendingUp,
+    TrendingDown, Clock, Activity, Award, MessageSquare, Eye
+} from 'lucide-react';
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, Legend
+} from 'recharts';
+import { format, subDays, eachDayOfInterval, parseISO, startOfDay, subMonths, eachMonthOfInterval, startOfMonth } from 'date-fns';
 
+const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const buildDailyTimeSeries = (rows = [], dateField, days = 30, valueLabel = 'count') => {
+    const interval = eachDayOfInterval({
+        start: startOfDay(subDays(new Date(), days - 1)),
+        end: startOfDay(new Date())
+    });
+    const map = {};
+    interval.forEach(d => { map[format(d, 'yyyy-MM-dd')] = 0; });
+    rows.forEach(row => {
+        const day = format(parseISO(row[dateField]), 'yyyy-MM-dd');
+        if (day in map) map[day]++;
+    });
+    return interval.map(d => ({
+        date: format(d, 'MMM dd'),
+        [valueLabel]: map[format(d, 'yyyy-MM-dd')]
+    }));
+};
+
+const buildMonthlyTimeSeries = (rows = [], dateField, months = 6, valueLabel = 'count') => {
+    const now = new Date();
+    const interval = eachMonthOfInterval({
+        start: startOfMonth(subMonths(now, months - 1)),
+        end: startOfMonth(now)
+    });
+    const map = {};
+    interval.forEach(d => { map[format(d, 'yyyy-MM')] = 0; });
+    rows.forEach(row => {
+        const m = format(parseISO(row[dateField]), 'yyyy-MM');
+        if (m in map) map[m]++;
+    });
+    return interval.map(d => ({
+        date: format(d, 'MMM yy'),
+        [valueLabel]: map[format(d, 'yyyy-MM')]
+    }));
+};
+
+// ── Custom Tooltip ────────────────────────────────────────────────────────────
+const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="bg-white border border-slate-200 rounded-xl shadow-xl px-4 py-3 text-sm">
+            <p className="text-slate-400 text-xs mb-2 font-medium">{label}</p>
+            {payload.map((p, i) => (
+                <div key={i} className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+                    <span className="text-slate-700 font-semibold">{p.name}:</span>
+                    <span className="text-slate-900 font-bold">{p.value}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, color, bgColor, loading }) => (
+    <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full opacity-5 group-hover:scale-125 transition-transform duration-500 ${bgColor}`} />
+        <div className="flex justify-between items-start mb-4">
+            <div className={`p-2.5 rounded-xl ${bgColor} bg-opacity-10`}>
+                <Icon className={`w-5 h-5 ${color}`} />
+            </div>
+            {trend && (
+                <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded-lg ${trend === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-rose-500 bg-rose-50'}`}>
+                    {trend === 'up' ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                    {trendValue}
+                </div>
+            )}
+        </div>
+        <p className="text-slate-400 text-xs font-medium mb-1">{title}</p>
+        {loading ? (
+            <div className="h-7 w-20 bg-slate-200 animate-pulse rounded" />
+        ) : (
+            <div className="text-2xl font-bold text-slate-800">{value}</div>
+        )}
+        {subtitle && <p className="text-xs text-slate-400 mt-1.5">{subtitle}</p>}
+    </div>
+);
+
+// ── Main Component ─────────────────────────────────────────────────────────────
 const AdminAnalytics = () => {
+    const [loading, setLoading] = useState(true);
+
+    // Summary stats
     const [stats, setStats] = useState({
         totalUsers: 0,
         activeUsers7d: 0,
+        newUsersThisMonth: 0,
         totalMaterials: 0,
+        approvedMaterials: 0,
+        pendingMaterials: 0,
         totalDownloads: 0,
-        totalCoinsDistributed: 0,
-        recentActivity: []
+        totalViews: 0,
+        totalCoinsEarned: 0,
+        totalCoinsSpent: 0,
+        totalPosts: 0,
+        totalReplies: 0,
     });
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchAnalytics();
-    }, []);
+    // Chart data
+    const [userGrowthData, setUserGrowthData] = useState([]);          // daily 30d
+    const [uploadsOverTime, setUploadsOverTime] = useState([]);         // daily 30d
+    const [monthlyActivity, setMonthlyActivity] = useState([]);         // monthly 6mo (users + uploads)
+    const [coinFlowData, setCoinFlowData] = useState([]);               // daily transactions 14d
+    const [materialStatusPie, setMaterialStatusPie] = useState([]);     // pie: pending/approved/rejected
+    const [topUploaders, setTopUploaders] = useState([]);               // bar: top 5 uploaders
 
-    const fetchAnalytics = async () => {
+    useEffect(() => { fetchAll(); }, []);
+
+    const fetchAll = async () => {
         setLoading(true);
         try {
-            // Count registered users
-            const { count: userCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
-            
-            // Approximate active users based on recent transactions (hack for demo purposes)
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            const { data: activeUsers } = await supabase.from('transactions').select('user_id').gte('created_at', weekAgo.toISOString());
-            const uniqueActive = new Set(activeUsers?.map(u => u.user_id)).size;
+            const cutoff30 = subDays(new Date(), 30).toISOString();
+            const cutoff14 = subDays(new Date(), 14).toISOString();
+            const cutoff7  = subDays(new Date(), 7).toISOString();
+            const cutoff6m = subMonths(new Date(), 6).toISOString();
+            const startOfThisMonth = startOfMonth(new Date()).toISOString();
 
-            // Count approved materials
-            const { count: materialsCount } = await supabase.from('materials').select('*', { count: 'exact', head: true }).eq('status', 'approved');
-            
-            // We assume a 'downloads' column or table exists. Since it doesn't in the schema, we'll mock it based on materials
-            const mockDownloads = (materialsCount || 0) * 14; 
+            // ── Parallel fetches ───────────────────────────────────────────
+            const [
+                { count: totalUsers },
+                { data: usersLast30 },
+                { data: usersLast7d },
+                { count: newUsersMonth },
+                { count: totalMaterials },
+                { count: approvedMaterials },
+                { count: pendingMaterials },
+                { data: materialsLast30 },
+                { data: materialsLast6m },
+                { data: usersLast6m },
+                { data: allMaterials },
+                { data: txnsLast14 },
+                { data: earnTxns },
+                { data: spendTxns },
+                { count: totalPosts },
+                { count: totalReplies },
+            ] = await Promise.all([
+                supabase.from('users').select('*', { count: 'exact', head: true }),
+                supabase.from('users').select('created_at').gte('created_at', cutoff30),
+                supabase.from('transactions').select('user_id').gte('created_at', cutoff7),
+                supabase.from('users').select('*', { count: 'exact', head: true }).gte('created_at', startOfThisMonth),
+                supabase.from('materials').select('*', { count: 'exact', head: true }),
+                supabase.from('materials').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
+                supabase.from('materials').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+                supabase.from('materials').select('created_at').gte('created_at', cutoff30),
+                supabase.from('materials').select('created_at').gte('created_at', cutoff6m),
+                supabase.from('users').select('created_at').gte('created_at', cutoff6m),
+                supabase.from('materials').select('status, downloads, views'),
+                supabase.from('transactions').select('created_at, transaction_type, amount').gte('created_at', cutoff14),
+                supabase.from('transactions').select('amount').eq('transaction_type', 'EARN'),
+                supabase.from('transactions').select('amount').eq('transaction_type', 'SPEND'),
+                supabase.from('community_posts').select('*', { count: 'exact', head: true }),
+                supabase.from('community_replies').select('*', { count: 'exact', head: true }),
+            ]);
 
-            // Calculate total coins from completed reward transactions
-            const coinTx = await fetchCompletedRewardTransactions();
-            const totalCoins = coinTx?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+            // Active users (unique user_ids in txn last 7d)
+            const activeUsers7d = new Set((usersLast7d || []).map(r => r.user_id)).size;
 
-            // Get recent platform activity
-            const activity = await fetchTransactionsWithUsers({ limit: 5 });
+            // Totals from materials
+            const totalDownloads = (allMaterials || []).reduce((s, r) => s + (r.downloads || 0), 0);
+            const totalViews     = (allMaterials || []).reduce((s, r) => s + (r.views || 0), 0);
+            const totalCoinsEarned = (earnTxns || []).reduce((s, r) => s + (r.amount || 0), 0);
+            const totalCoinsSpent  = (spendTxns || []).reduce((s, r) => s + (r.amount || 0), 0);
+
+            const rejectedCount = (totalMaterials || 0) - (approvedMaterials || 0) - (pendingMaterials || 0);
 
             setStats({
-                totalUsers: userCount || 0,
-                activeUsers7d: uniqueActive || 0,
-                totalMaterials: materialsCount || 0,
-                totalDownloads: mockDownloads,
-                totalCoinsDistributed: totalCoins,
-                recentActivity: activity || []
+                totalUsers: totalUsers || 0,
+                activeUsers7d,
+                newUsersThisMonth: newUsersMonth || 0,
+                totalMaterials: totalMaterials || 0,
+                approvedMaterials: approvedMaterials || 0,
+                pendingMaterials: pendingMaterials || 0,
+                totalDownloads,
+                totalViews,
+                totalCoinsEarned,
+                totalCoinsSpent,
+                totalPosts: totalPosts || 0,
+                totalReplies: totalReplies || 0,
             });
 
-        } catch (error) {
-            console.error('Error fetching analytics:', error);
+            // ── Chart data ────────────────────────────────────────────────
+            // User growth daily (last 30 days)
+            setUserGrowthData(buildDailyTimeSeries(usersLast30, 'created_at', 30, 'Users'));
+
+            // Uploads daily (last 30 days)
+            setUploadsOverTime(buildDailyTimeSeries(materialsLast30, 'created_at', 30, 'Uploads'));
+
+            // Monthly combined (last 6 months)
+            const usersMonthly   = buildMonthlyTimeSeries(usersLast6m, 'created_at', 6, 'Users');
+            const uploadsMonthly = buildMonthlyTimeSeries(materialsLast6m, 'created_at', 6, 'Uploads');
+            const combined = usersMonthly.map((u, i) => ({
+                date: u.date,
+                Users: u.Users,
+                Uploads: uploadsMonthly[i]?.Uploads || 0
+            }));
+            setMonthlyActivity(combined);
+
+            // Coin flow daily (earn vs spend, last 14 days)
+            const interval14 = eachDayOfInterval({ start: startOfDay(subDays(new Date(), 13)), end: startOfDay(new Date()) });
+            const coinMap = {};
+            interval14.forEach(d => { coinMap[format(d, 'yyyy-MM-dd')] = { Earned: 0, Spent: 0 }; });
+            (txnsLast14 || []).forEach(tx => {
+                const day = format(parseISO(tx.created_at), 'yyyy-MM-dd');
+                if (day in coinMap) {
+                    if (tx.transaction_type === 'EARN') coinMap[day].Earned += tx.amount;
+                    else coinMap[day].Spent += tx.amount;
+                }
+            });
+            setCoinFlowData(interval14.map(d => ({
+                date: format(d, 'MMM dd'),
+                ...coinMap[format(d, 'yyyy-MM-dd')]
+            })));
+
+            // Material status pie
+            setMaterialStatusPie([
+                { name: 'Approved', value: approvedMaterials || 0 },
+                { name: 'Pending',  value: pendingMaterials || 0 },
+                { name: 'Rejected', value: rejectedCount > 0 ? rejectedCount : 0 },
+            ].filter(e => e.value > 0));
+
+            // Top uploaders (top 5 by upload count, from approved materials with uploader_name)
+            const { data: uploaderRows } = await supabase
+                .from('materials')
+                .select('uploader_name')
+                .eq('status', 'approved')
+                .not('uploader_name', 'is', null);
+            const nameCount = {};
+            (uploaderRows || []).forEach(r => {
+                const n = r.uploader_name || 'Unknown';
+                nameCount[n] = (nameCount[n] || 0) + 1;
+            });
+            const sorted = Object.entries(nameCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([name, Uploads]) => ({ name: name.length > 14 ? name.slice(0, 12) + '…' : name, Uploads }));
+            setTopUploaders(sorted);
+
+        } catch (err) {
+            console.error('Analytics fetch error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, color }) => (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col relative overflow-hidden group">
-            <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-10 group-hover:scale-110 transition-transform ${color}`} />
-            
-            <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-lg ${color} bg-opacity-10`}>
-                    <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
-                </div>
-                {trend && (
-                    <div className={`flex items-center text-sm font-medium ${trend === 'up' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {trend === 'up' ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
-                        {trendValue}
-                    </div>
-                )}
-            </div>
-            
-            <div>
-                <h3 className="text-slate-500 text-sm font-medium mb-1">{title}</h3>
-                <div className="text-3xl font-bold text-slate-800">{loading ? '...' : value}</div>
-                {subtitle && <p className="text-xs text-slate-400 mt-2">{subtitle}</p>}
-            </div>
-        </div>
-    );
+    const PIE_COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 
     return (
-        <div className="min-h-screen bg-slate-50 flex relative">
-            <AdminSidebar />
-            
-            <main className="flex-1 overflow-y-auto p-8">
+        <div className="h-screen bg-slate-50 overflow-hidden flex">
+            <ResponsiveAdminSidebar />
+
+            <main className="flex-1 overflow-y-auto p-6 lg:p-8 lg:ml-64 xl:ml-72">
+                {/* Header */}
                 <header className="mb-8">
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center">
                         <BarChart3 className="w-6 h-6 mr-3 text-violet-600" />
                         Platform Analytics
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">Comprehensive breakdown of platform growth, engagement, and content</p>
+                    <p className="text-slate-400 text-sm mt-1">Live data from your Supabase database — refreshes on every visit</p>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                    <StatCard 
-                        title="Total Registered Users" 
-                        value={stats.totalUsers.toLocaleString()} 
-                        subtitle={`${stats.activeUsers7d} active in last 7 days`}
-                        icon={Users} 
-                        color="bg-blue-500" 
-                        trend="up" 
-                        trendValue="+12%"
-                    />
-                    <StatCard 
-                        title="Approved Materials" 
-                        value={stats.totalMaterials.toLocaleString()} 
-                        subtitle="Across all courses and PYQs"
-                        icon={FileText} 
-                        color="bg-violet-500" 
-                        trend="up" 
-                        trendValue="+5%"
-                    />
-                    <StatCard 
-                        title="Total Subject Downloads" 
-                        value={stats.totalDownloads.toLocaleString()} 
-                        subtitle="Estimated from material popularity"
-                        icon={Download} 
-                        color="bg-emerald-500" 
-                        trend="up" 
-                        trendValue="+24%"
-                    />
-                    <StatCard 
-                        title="Platform Coins Circulated" 
-                        value={stats.totalCoinsDistributed.toLocaleString()} 
-                        subtitle="Total value rewarded to students"
-                        icon={Gift} 
-                        color="bg-amber-500" 
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 relative overflow-hidden flex flex-col min-h-[400px]">
-                        <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center">
-                            <Activity className="w-5 h-5 mr-2 text-slate-400" />
-                            Growth Metrics (Simulated Weekly Pattern)
-                        </h2>
-                        
-                        <div className="flex-1 flex flex-col justify-end relative h-full">
-                            {/* CSS-based simulated bar chart background */}
-                            <div className="absolute inset-0 flex items-end justify-between px-8 pb-10 opacity-20 z-0">
-                                <div className="w-[10%] bg-violet-600 rounded-t-md h-[40%] hover:h-[45%] transition-all"></div>
-                                <div className="w-[10%] bg-violet-600 rounded-t-md h-[55%] hover:h-[60%] transition-all"></div>
-                                <div className="w-[10%] bg-violet-600 rounded-t-md h-[45%] hover:h-[50%] transition-all"></div>
-                                <div className="w-[10%] bg-emerald-500 rounded-t-md h-[70%] hover:h-[75%] transition-all relative">
-                                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-600 whitespace-nowrap hidden group-hover:block">Midweek Spike</span>
-                                </div>
-                                <div className="w-[10%] bg-violet-600 rounded-t-md h-[60%] hover:h-[65%] transition-all"></div>
-                                <div className="w-[10%] bg-violet-600 rounded-t-md h-[85%] hover:h-[90%] transition-all text-center"></div>
-                                <div className="w-[10%] bg-violet-600 rounded-t-md h-[100%] hover:h-[95%] transition-all"></div>
-                            </div>
-                            
-                            <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm z-10 opacity-0 hover:opacity-100 transition-opacity flex-col">
-                                <div className="bg-white px-6 py-4 rounded-xl shadow-xl border border-violet-100 text-center transform scale-95 hover:scale-100 transition-transform">
-                                    <BarChart3 className="w-8 h-8 text-violet-500 mx-auto mb-2" />
-                                    <p className="font-medium text-slate-800 text-sm">Interactive Charts Unavailable</p>
-                                    <p className="text-xs text-slate-500 mt-1">Implement a library like `recharts` for live data integration.</p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex justify-between px-8 text-xs font-medium text-slate-400 border-t border-slate-100 pt-4 z-0">
-                                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                            </div>
-                        </div>
+                <div className="space-y-6">
+                    {/* ── Row 1: Stat Cards ── */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+                        <StatCard loading={loading} title="Total Users" value={stats.totalUsers.toLocaleString()} subtitle={`${stats.newUsersThisMonth} new this month`} icon={Users} color="text-blue-600" bgColor="bg-blue-500" trend="up" trendValue={`+${stats.newUsersThisMonth}`} />
+                        <StatCard loading={loading} title="Active (7d)" value={stats.activeUsers7d.toLocaleString()} subtitle="Unique transacting users" icon={Activity} color="text-indigo-600" bgColor="bg-indigo-500" />
+                        <StatCard loading={loading} title="Approved Materials" value={stats.approvedMaterials.toLocaleString()} subtitle={`${stats.pendingMaterials} pending review`} icon={FileText} color="text-violet-600" bgColor="bg-violet-500" />
+                        <StatCard loading={loading} title="Total Downloads" value={stats.totalDownloads.toLocaleString()} subtitle="Sum of material.downloads" icon={Download} color="text-emerald-600" bgColor="bg-emerald-500" />
+                        <StatCard loading={loading} title="Coins Distributed" value={stats.totalCoinsEarned.toLocaleString()} subtitle={`${stats.totalCoinsSpent} spent`} icon={Award} color="text-amber-500" bgColor="bg-amber-400" />
+                        <StatCard loading={loading} title="Community Posts" value={stats.totalPosts.toLocaleString()} subtitle={`${stats.totalReplies} replies`} icon={MessageSquare} color="text-rose-600" bgColor="bg-rose-500" />
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                        <div className="p-6 border-b border-slate-100">
-                            <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-                                <Clock className="w-5 h-5 mr-2 text-slate-400" />
-                                Recent Network Activity
-                            </h2>
-                        </div>
-                        <div className="p-0">
+                    {/* ── Row 2: Monthly Combined + Material Status Pie ── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-5">
+                                <h2 className="text-base font-bold text-slate-800">Monthly Growth — Users &amp; Uploads (6 Months)</h2>
+                                <span className="text-xs bg-violet-50 text-violet-600 font-semibold px-2 py-1 rounded">Live Data</span>
+                            </div>
                             {loading ? (
-                                <div className="p-8 text-center text-slate-400 animate-pulse">Loading activity stream...</div>
-                            ) : stats.recentActivity.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400 text-sm">No recent platform activity found.</div>
+                                <div className="h-64 bg-slate-100 animate-pulse rounded-lg" />
                             ) : (
-                                <ul className="divide-y divide-slate-100">
-                                    {stats.recentActivity.map(act => (
-                                        <li key={act.id} className="p-4 hover:bg-slate-50 flex items-start transition-colors">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-3 shrink-0">
-                                                <Activity className="w-4 h-4 text-indigo-500" />
+                                <ResponsiveContainer width="100%" height={260}>
+                                    <BarChart data={monthlyActivity} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                        <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                                        <Bar dataKey="Users" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                                        <Bar dataKey="Uploads" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+
+                        {/* Material Status Pie */}
+                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+                            <h2 className="text-base font-bold text-slate-800 mb-5">Material Status Breakdown</h2>
+                            {loading ? (
+                                <div className="h-64 bg-slate-100 animate-pulse rounded-lg" />
+                            ) : materialStatusPie.length === 0 ? (
+                                <div className="h-64 flex items-center justify-center text-slate-400 text-sm">No materials yet</div>
+                            ) : (
+                                <>
+                                    <ResponsiveContainer width="100%" height={200}>
+                                        <PieChart>
+                                            <Pie data={materialStatusPie} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={4} dataKey="value">
+                                                {materialStatusPie.map((_, i) => (
+                                                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip formatter={(v, n) => [v, n]} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="mt-3 space-y-2">
+                                        {materialStatusPie.map((item, i) => (
+                                            <div key={i} className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                                                    <span className="text-slate-500">{item.name}</span>
+                                                </div>
+                                                <span className="font-bold text-slate-700">{item.value}</span>
                                             </div>
-                                            <div>
-                                                <p className="text-sm text-slate-700 leading-tight mb-1">
-                                                    <span className="font-semibold text-slate-900">{getDisplayName(act.users, 'System')}</span> triggered a {getTransactionType(act)} transaction.
-                                                </p>
-                                                <p className="text-xs text-slate-400">
-                                                    {new Date(act.created_at).toLocaleDateString()} at {new Date(act.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                </p>
-                                            </div>
-                                            <div className={`ml-auto text-xs font-bold px-2 py-1 rounded-md ${act.amount > 0 ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-100'}`}>
-                                                {act.amount > 0 ? '+' : ''}{act.amount}
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
+                                        ))}
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
+
+                    {/* ── Row 3: Daily User Growth + Daily Uploads Area ── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+                            <h2 className="text-base font-bold text-slate-800 mb-5">Daily User Registrations — Last 30 Days</h2>
+                            {loading ? (
+                                <div className="h-52 bg-slate-100 animate-pulse rounded-lg" />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={210}>
+                                    <AreaChart data={userGrowthData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.28} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} interval={4} />
+                                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Area type="monotone" dataKey="Users" stroke="#3b82f6" strokeWidth={2.5} fill="url(#userGrad)" dot={false} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+
+                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+                            <h2 className="text-base font-bold text-slate-800 mb-5">Daily Material Uploads — Last 30 Days</h2>
+                            {loading ? (
+                                <div className="h-52 bg-slate-100 animate-pulse rounded-lg" />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={210}>
+                                    <AreaChart data={uploadsOverTime} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="uploadArea" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.28} />
+                                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} interval={4} />
+                                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Area type="monotone" dataKey="Uploads" stroke="#8b5cf6" strokeWidth={2.5} fill="url(#uploadArea)" dot={false} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── Row 4: Coin Flow + Top Uploaders ── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Coin flow last 14 days */}
+                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+                            <h2 className="text-base font-bold text-slate-800 mb-5">Coin Flow — Earned vs Spent (14 Days)</h2>
+                            {loading ? (
+                                <div className="h-52 bg-slate-100 animate-pulse rounded-lg" />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <LineChart data={coinFlowData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} interval={1} />
+                                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                                        <Line type="monotone" dataKey="Earned" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3, fill: '#10b981' }} />
+                                        <Line type="monotone" dataKey="Spent" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3, fill: '#f59e0b' }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+
+                        {/* Top uploaders */}
+                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+                            <h2 className="text-base font-bold text-slate-800 mb-5">Top Uploaders (Approved Materials)</h2>
+                            {loading ? (
+                                <div className="h-52 bg-slate-100 animate-pulse rounded-lg" />
+                            ) : topUploaders.length === 0 ? (
+                                <div className="h-52 flex items-center justify-center text-slate-400 text-sm">No approved materials yet</div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <BarChart data={topUploaders} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                                        <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={80} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Bar dataKey="Uploads" fill="#8b5cf6" radius={[0, 4, 4, 0]} maxBarSize={28} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── Summary Callouts ── */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl p-5 text-white">
+                            <Eye className="w-6 h-6 mb-2 opacity-75" />
+                            <p className="text-3xl font-bold">{stats.totalViews.toLocaleString()}</p>
+                            <p className="text-violet-200 text-sm mt-1">Total Material Views</p>
+                        </div>
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-5 text-white">
+                            <Download className="w-6 h-6 mb-2 opacity-75" />
+                            <p className="text-3xl font-bold">{stats.totalDownloads.toLocaleString()}</p>
+                            <p className="text-emerald-100 text-sm mt-1">Total Material Downloads</p>
+                        </div>
+                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 rounded-xl p-5 text-white">
+                            <Award className="w-6 h-6 mb-2 opacity-75" />
+                            <p className="text-3xl font-bold">{stats.totalCoinsEarned.toLocaleString()}</p>
+                            <p className="text-amber-100 text-sm mt-1">Total Coins Earned by Students</p>
+                        </div>
+                    </div>
+
                 </div>
             </main>
         </div>
     );
 };
+
 export default AdminAnalytics;

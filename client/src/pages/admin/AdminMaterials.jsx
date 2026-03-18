@@ -13,6 +13,30 @@ import {
   rejectMaterialUpload,
 } from '../../utils/materials';
 
+// Better time formatting function
+const formatTimeAgo = (dateString) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) {
+        return 'Just now';
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+    } else {
+        return format(date, 'MMM dd, yyyy');
+    }
+};
+
 const APPROVAL_REWARD = 40;
 
 const AdminMaterials = () => {
@@ -21,6 +45,7 @@ const AdminMaterials = () => {
   const [actionLoading, setActionLoading] = useState(null);
   const [activeDownloadId, setActiveDownloadId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [prices, setPrices] = useState({}); // Track individual prices for each material row
   const {
     activePreviewId,
     closePreview,
@@ -58,8 +83,10 @@ const AdminMaterials = () => {
         data: { user },
       } = await supabase.auth.getUser();
 
+      const finalPrice = prices[material.id] || material.price || 5;
+
       await approveMaterialUpload({
-        material,
+        material: { ...material, price: finalPrice },
         adminUserId: user?.id || null,
       });
 
@@ -126,17 +153,18 @@ const AdminMaterials = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
       <ResponsiveAdminSidebar />
       
-      <div className="lg:ml-64 xl:ml-72">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
         <ResponsiveAdminHeader 
           title="Materials Approval" 
           subtitle="Review and approve study material submissions from students"
           onMobileMenuToggle={() => {}}
         />
         
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
             {/* Search and Header Section */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 lg:p-6">
@@ -173,19 +201,20 @@ const AdminMaterials = () => {
                       <th className="px-6 py-3 font-semibold">Category</th>
                       <th className="px-6 py-3 font-semibold">Uploader</th>
                       <th className="px-6 py-3 font-semibold">Submitted</th>
+                      <th className="px-6 py-3 font-semibold">Set Price</th>
                       <th className="px-6 py-3 font-semibold text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                      <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                         Loading pending materials...
                       </td>
                     </tr>
                   ) : filteredMaterials.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                      <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                         No non-PYQ material submissions are waiting for review.
                       </td>
                     </tr>
@@ -209,9 +238,23 @@ const AdminMaterials = () => {
                         </td>
                         <td className="px-6 py-4">{material.uploader_name || 'Anonymous'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-slate-500">
-                          {material.created_at
-                            ? format(new Date(material.created_at), 'MMM dd, yyyy')
-                            : 'Unknown'}
+                          {formatTimeAgo(material.created_at)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] uppercase font-bold text-slate-400">Set Coins</span>
+                            <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 w-28 group-focus-within:ring-2 group-focus-within:ring-violet-500 transition-all">
+                              <span className="text-amber-500 font-bold text-xs shrink-0">🪙</span>
+                              <input 
+                                type="number"
+                                min="0"
+                                max="1000"
+                                value={prices[material.id] ?? material.price ?? 5}
+                                onChange={(e) => setPrices(prev => ({ ...prev, [material.id]: parseInt(e.target.value) || 0 }))}
+                                className="bg-transparent border-none p-0 text-sm font-bold text-slate-700 focus:ring-0 w-full"
+                              />
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end space-x-2">

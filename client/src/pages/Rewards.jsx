@@ -239,7 +239,7 @@ const Rewards = () => {
             <div className="min-h-screen bg-gray-50 flex">
                 <Sidebar />
 
-                <div className="flex-1 flex flex-col lg:ml-0 overflow-hidden">
+                <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
                     <ResponsiveHeader 
                         title="Rewards Center"
                         showSearch={true}

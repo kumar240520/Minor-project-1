@@ -169,7 +169,7 @@ const Dashboard = () => {
                 <Sidebar />
 
                 {/* Main Content */}
-                <div className="flex-1 flex flex-col lg:ml-0 overflow-hidden">
+                <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
                     {/* Responsive Header */}
                     <ResponsiveHeader 
                         title={loading ? "Loading..." : `Welcome back, ${getFirstName(userData, 'Student')} 👋`}

@@ -50,14 +50,19 @@ const MaterialCard = ({
         <div className={`rounded-2xl p-3 ${theme.iconClasses}`}>
           <IconComponent className="h-6 w-6" />
         </div>
-        <span
-          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${theme.badgeClasses}`}
-        >
-          {material.subject || material.category || (materialType === 'pyq' ? 'PYQ' : 'Material')}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span
+            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${theme.badgeClasses}`}
+          >
+            {material.subject || material.category || (materialType === 'pyq' ? 'PYQ' : 'Material')}
+          </span>
+          <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700 border border-amber-100 uppercase tracking-wider">
+            <span className="mr-1">🪙</span> {material.price || 5} Coins
+          </span>
+        </div>
       </div>
 
-      <div className="mt-5 flex-1">
+      <div className="mt-4 flex-1">
         <h3 className="text-lg font-semibold text-slate-900">{material.title}</h3>
         <p className="mt-2 text-sm text-slate-500">
           {material.subject || material.description || 'Shared study resource'}

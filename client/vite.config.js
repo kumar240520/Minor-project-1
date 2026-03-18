@@ -5,7 +5,7 @@ import { resolve } from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // Use relative paths for static deployment
+  base: '/', // Use absolute paths for robust routing on Netlify/Vercel
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

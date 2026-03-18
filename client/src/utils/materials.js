@@ -634,179 +634,67 @@ export const downloadMaterialFile = async (material, { viewerRole = 'student' } 
   
   console.log('[downloadMaterialFile] User:', user.id);
 
-  // Prevent self-download
-  const uploaderId = material?.uploaded_by || material?.user_id;
-  console.log('[downloadMaterialFile] Uploader:', uploaderId, 'User:', user.id);
-  
-  if (uploaderId === user.id) {
-    console.log('[downloadMaterialFile] SELF-DOWNLOAD path - no coins deducted');
-    // Allow download without coin deduction for own materials
+  // Resolve uploader and price
+  const uploaderId = material?.uploaded_by || material?.user_id || null;
+  const isSelfDownload = uploaderId === user.id;
+  const price = material?.price ?? 5;
+
+  console.log('[downloadMaterialFile] Uploader:', uploaderId, '| Self-download:', isSelfDownload, '| Price:', price);
+
+  // ── Self-download: no coin deduction ──────────────────────────────────────
+  if (isSelfDownload) {
+    console.log('[downloadMaterialFile] SELF-DOWNLOAD — no coins deducted');
     const publicUrl = await getMaterialAccessUrl(material, { viewerRole });
-    
+
+    try { await bumpMaterialMetric(material, 'downloads'); }
+    catch (err) { console.error('Failed to update download count:', err); }
+
     try {
-      await bumpMaterialMetric(material, 'downloads');
-    } catch (error) {
-      console.error('Failed to update download count:', error);
+      await downloadMaterialUrl(publicUrl, material?.file_name || material?.title || `material-${material?.id || 'download'}`);
+    } catch {
+      openMaterialUrl(publicUrl);
     }
-
-    await downloadMaterialUrl(
-      publicUrl,
-      material?.file_name || material?.title || `material-${material?.id || 'download'}`,
-    );
-
     return publicUrl;
   }
 
-  // Check if already purchased
-  console.log('[downloadMaterialFile] Checking if already purchased...');
-  const { data: existingPurchase } = await supabase
-    .from('resource_purchases')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('resource_id', material.id)
-    .single();
+  // ── Other user's material: call atomic server-side RPC ────────────────────
+  console.log('[downloadMaterialFile] Calling process_material_download RPC...');
 
-  console.log('[downloadMaterialFile] Existing purchase:', existingPurchase);
+  const { data: rpcResult, error: rpcError } = await supabase.rpc('process_material_download', {
+    p_material_id:  material.id,
+    p_buyer_id:     user.id,
+    p_uploader_id:  uploaderId,
+    p_price:        price,
+  });
 
-  if (existingPurchase) {
-    console.log('[downloadMaterialFile] ALREADY PURCHASED path - no coins deducted');
-    // Already purchased, allow download without deducting coins again
-    const publicUrl = await getMaterialAccessUrl(material, { viewerRole });
-    
-    try {
-      await bumpMaterialMetric(material, 'downloads');
-    } catch (error) {
-      console.error('Failed to update download count:', error);
-    }
-
-    await downloadMaterialUrl(
-      publicUrl,
-      material?.file_name || material?.title || `material-${material?.id || 'download'}`,
-    );
-
-    return publicUrl;
+  if (rpcError) {
+    console.error('[downloadMaterialFile] RPC error:', rpcError);
+    throw new Error(rpcError.message || 'Failed to process download. Please try again.');
   }
 
-  console.log('[downloadMaterialFile] NEW PURCHASE path - deducting coins');
+  console.log('[downloadMaterialFile] RPC result:', rpcResult);
 
-  // Get material price (default to 5 if not set)
-  const price = material?.price || 5;
-  console.log('[downloadMaterialFile] Price:', price);
-
-  // Check user has enough coins
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('coins')
-    .eq('id', user.id)
-    .single();
-
-  if (userError || !userData) {
-    throw new Error('Could not verify your coin balance');
+  if (!rpcResult?.success) {
+    // Surface the descriptive error from the DB (e.g. "Insufficient coins...")
+    throw new Error(rpcResult?.error || 'Failed to process download. Please try again.');
   }
 
-  console.log('[downloadMaterialFile] User coins:', userData.coins);
-
-  if (userData.coins < price) {
-    throw new Error(`Insufficient coins. You have ${userData.coins} coins, but this material costs ${price} coins.`);
+  if (rpcResult.already_purchased) {
+    console.log('[downloadMaterialFile] Already purchased — downloading without charge');
+  } else {
+    console.log('[downloadMaterialFile] ✅ Coins deducted. Uploader reward:', rpcResult.uploader_reward);
   }
 
-  // Process download with coin deduction
+
+
+  // ── Open / download the file ──────────────────────────────────────────────
+  console.log('[downloadMaterialFile] Fetching file URL...');
   const publicUrl = await getMaterialAccessUrl(material, { viewerRole });
 
   try {
-    console.log('[downloadMaterialFile] Processing coin deduction and transactions...');
-    
-    // 1. Deduct coins from buyer
-    console.log('[downloadMaterialFile] Step 1: Deducting coins from buyer');
-    const { error: deductError } = await supabase
-      .from('users')
-      .update({ coins: userData.coins - price })
-      .eq('id', user.id);
-
-    if (deductError) throw deductError;
-    console.log('[downloadMaterialFile] Coins deducted successfully');
-
-    // 2. Give 80% to uploader
-    console.log('[downloadMaterialFile] Step 2: Giving reward to uploader');
-    const uploaderReward = Math.floor(price * 0.8);
-    if (uploaderReward > 0 && uploaderId) {
-      const { data: uploaderData } = await supabase
-        .from('users')
-        .select('coins')
-        .eq('id', uploaderId)
-        .single();
-
-      if (uploaderData) {
-        await supabase
-          .from('users')
-          .update({ coins: uploaderData.coins + uploaderReward })
-          .eq('id', uploaderId);
-        console.log('[downloadMaterialFile] Uploader reward given:', uploaderReward);
-      }
-    }
-
-    // 3. Record purchase
-    console.log('[downloadMaterialFile] Step 3: Recording purchase');
-    await supabase
-      .from('resource_purchases')
-      .insert({
-        user_id: user.id,
-        resource_id: material.id
-      });
-
-    // 4. Update download count
-    console.log('[downloadMaterialFile] Step 4: Updating download count');
-    await bumpMaterialMetric(material, 'downloads');
-
-    // 5. Create transaction records
-    console.log('[downloadMaterialFile] Step 5: Creating transaction records');
-    try {
-      console.log('[downloadMaterialFile] Creating purchase transaction for user:', user.id, 'amount:', price);
-      await createPurchaseTransaction({
-        userId: user.id,
-        amount: price,
-        source: 'resource_purchase',
-        referenceId: material.id,
-        description: `Purchased: ${material.title || 'Material'}`,
-      });
-      console.log('[downloadMaterialFile] ✅ Purchase transaction created successfully');
-    } catch (txError) {
-      console.error('[downloadMaterialFile] ❌ Failed to create purchase transaction:', txError);
-      console.error('[downloadMaterialFile] Error code:', txError?.code);
-      console.error('[downloadMaterialFile] Error message:', txError?.message);
-      console.error('[downloadMaterialFile] Error details:', txError?.details);
-    }
-
-    if (uploaderReward > 0 && uploaderId) {
-      try {
-        console.log('[downloadMaterialFile] Creating sale transaction for uploader:', uploaderId, 'amount:', uploaderReward);
-        await createRewardTransaction({
-          userId: uploaderId,
-          amount: uploaderReward,
-          source: 'resource_sale',
-          referenceId: material.id,
-          description: `Sale: ${material.title || 'Material'}`,
-        });
-        console.log('[downloadMaterialFile] ✅ Sale transaction created successfully');
-      } catch (txError) {
-        console.error('[downloadMaterialFile] ❌ Failed to create sale transaction:', txError);
-      }
-    }
-
-  } catch (error) {
-    console.error('[downloadMaterialFile] Error processing download:', error);
-    throw new Error('Failed to process download. Please try again.');
-  }
-
-  // Download the file
-  console.log('[downloadMaterialFile] Downloading file...');
-  try {
-    await downloadMaterialUrl(
-      publicUrl,
-      material?.file_name || material?.title || `material-${material?.id || 'download'}`,
-    );
-  } catch (error) {
-    console.error('Failed to trigger browser download, falling back to opening the file:', error);
+    await downloadMaterialUrl(publicUrl, material?.file_name || material?.title || `material-${material?.id || 'download'}`);
+  } catch (err) {
+    console.error('[downloadMaterialFile] Browser download failed, opening in new tab:', err);
     openMaterialUrl(publicUrl);
   }
 

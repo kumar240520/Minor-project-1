@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertOctagon, Clock3, FileWarning, ShieldAlert } from 'lucide-react';
-import AdminSidebar from '../../components/admin/AdminSidebar';
+import ResponsiveAdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
+import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader';
 import { supabase } from '../../supabaseClient';
 import { fetchPendingMaterials } from '../../utils/materials';
 
@@ -60,17 +61,19 @@ const AdminReports = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <AdminSidebar />
-
-      <main className="flex-1 overflow-y-auto p-8">
-        <header className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-800">Reports and Moderation</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            A moderation snapshot based on the current platform content state
-          </p>
-        </header>
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
+      <ResponsiveAdminSidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
+        <ResponsiveAdminHeader 
+          title="Reports and Moderation" 
+          subtitle="A moderation snapshot based on the current platform content state"
+          onMobileMenuToggle={() => {}}
+        />
+        
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <Clock3 className="w-6 h-6 text-amber-500 mb-4" />
@@ -117,7 +120,9 @@ const AdminReports = () => {
             )}
           </div>
         </section>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

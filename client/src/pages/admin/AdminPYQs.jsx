@@ -117,17 +117,18 @@ const AdminPYQs = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
       <ResponsiveAdminSidebar />
       
-      <div className="lg:ml-64 xl:ml-72">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
         <ResponsiveAdminHeader 
           title="PYQ Approval" 
           subtitle="Moderate Previous Year Question papers submitted by students"
           onMobileMenuToggle={() => {}}
         />
         
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
             {/* Search and Header Section */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 lg:p-6">

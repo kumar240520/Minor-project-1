@@ -5,9 +5,9 @@ import ResponsiveHeader from './ResponsiveHeader';
 const Layout = ({ children, title, showSearch = true, showNotifications = true, showProfile = true }) => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="h-screen bg-gray-50 flex overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col lg:ml-0 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
           <ResponsiveHeader 
             title={title}
             showSearch={showSearch}
