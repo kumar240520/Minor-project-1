@@ -322,8 +322,11 @@ const Login = () => {
             if (isRowLevelSecurityError(loginError)) {
                 setError('Your account signed in, but users table is still blocked by Supabase RLS. Apply users insert policy or trigger, then try again.');
             } else if (loginError.message?.includes('Invalid login credentials')) {
-                // Check if this might be an OTP-only user
-                setError('Invalid login credentials. If you registered via OTP, please use the OTP login method instead.');
+                // This could mean:
+                // 1. Wrong password
+                // 2. User exists but has no password (OTP-only user)
+                // 3. User doesn't exist
+                setError('Invalid login credentials. This could mean:\n• Wrong password\n• Account registered via OTP (use OTP login)\n• Email not registered');
             } else {
                 setError(loginError.message || 'Unable to sign in right now.');
             }

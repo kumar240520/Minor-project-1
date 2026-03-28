@@ -78,12 +78,12 @@ const handleGoogleSignUp = async () => {
         }
         
         try {
-            // Send OTP for email verification with user data
-            const { error: otpError } = await supabase.auth.signInWithOtp({
+            // Create user with password using signUp, then send OTP for verification
+            const { data, error: signUpError } = await supabase.auth.signUp({
                 email: email,
+                password: password,
                 options: {
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
-                    createUser: true, // Ensure user creation is allowed
                     data: {
                         name: name,
                         full_name: name,
@@ -91,13 +91,13 @@ const handleGoogleSignUp = async () => {
                 }
             });
 
-            if (otpError) {
-                throw otpError;
+            if (signUpError) {
+                throw signUpError;
             }
 
             // Store user data and move to OTP step
             setPendingUserData({ name, email, password });
-            setSuccessMsg('OTP sent successfully! Please check your email to verify your account.');
+            setSuccessMsg('Account created! Please check your email to verify your account.');
             setCurrentStep('otp');
             startTimer();
         } catch (err) {
@@ -121,18 +121,18 @@ const handleGoogleSignUp = async () => {
         }
 
         try {
-            // Verify OTP - the user was already created with data during signInWithOtp
+            // Verify OTP to complete the registration process
             const { data, error: verifyError } = await supabase.auth.verifyOtp({
                 email: pendingUserData.email,
                 token: getOtpString(),
-                type: 'email' // Use 'email' type since user was created during signInWithOtp
+                type: 'signup' // Use 'signup' type since we used signUp
             });
 
             if (verifyError) {
                 throw verifyError;
             }
 
-            setSuccessMsg('Account created successfully! Setting up your profile...');
+            setSuccessMsg('Account verified successfully! Setting up your profile...');
 
             // Create student profile using the data from verifyOtp response
             try {
