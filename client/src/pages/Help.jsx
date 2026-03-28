@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Bell, BookOpen, MessageCircle, FileQuestion, Mail, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { SidebarProvider } from '../components/Sidebar';
 
 const Help = () => {
     const [openFaq, setOpenFaq] = useState(null);
@@ -44,7 +44,8 @@ const Help = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
+        <SidebarProvider>
+            <div className="min-h-screen bg-gray-50 flex">
             <Sidebar />
 
             <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
@@ -182,7 +183,8 @@ const Help = () => {
                     </div>
                 </main>
             </div>
-        </div>
+            </div>
+        </SidebarProvider>
     );
 };
 

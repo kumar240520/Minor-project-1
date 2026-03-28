@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Bell, Settings as SettingsIcon, User, Lock, Shield, CreditCard, BellRing, HelpCircle, Award } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
 

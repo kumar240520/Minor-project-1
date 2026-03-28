@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Bell, Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
 
@@ -93,7 +93,8 @@ const Calendar = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
+        <SidebarProvider>
+            <div className="min-h-screen bg-gray-50 flex">
             <Sidebar />
 
             <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
@@ -275,6 +276,7 @@ const Calendar = () => {
                 </main>
             </div>
             </div>
+        </SidebarProvider>
     );
 };
 
