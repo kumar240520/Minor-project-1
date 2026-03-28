@@ -2,6 +2,7 @@ import { motion, useInView } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { Users, FileText, CalendarCheck, Award, Sparkles, ArrowRight, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 
 const stats = [
     { 
@@ -66,6 +67,41 @@ const Counter = ({ from, to, duration = 2, suffix = "" }) => {
 };
 
 const StatsAndCTA = () => {
+    const [session, setSession] = useState(null);
+    const [role, setRole] = useState('student');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+            setSession(currentSession);
+            if (currentSession?.user) fetchUserRole(currentSession.user.id);
+            else setLoading(false);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            if (session?.user) fetchUserRole(session.user.id);
+            else {
+                setRole('student');
+                setLoading(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const fetchUserRole = async (userId) => {
+        try {
+            const { data } = await supabase.from('users').select('role').eq('id', userId).single();
+            if (data) setRole(data.role);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const dashboardPath = role === 'admin' ? '/admin/dashboard' : '/dashboard';
+    const ctaText = session ? 'Go to Dashboard' : 'Create Free Account';
+    const ctaLink = session ? dashboardPath : '/register';
     return (
         <div className="bg-gradient-to-br from-white via-violet-50/20 to-blue-50/20 relative overflow-hidden">
             {/* Decorative Background Elements */}
@@ -123,10 +159,10 @@ const StatsAndCTA = () => {
                                             <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
                                         </div>
                                         
-                                        <div className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-2 group-hover:text-violet-600 transition-colors duration-300">
+                                        <div className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-2 group-hover:text-violet-600 transition-colors duration-300">
                                             <Counter from={0} to={stat.value} duration={2.5} suffix={stat.suffix} />
                                         </div>
-                                        <div className="text-sm sm:text-base font-medium text-gray-500 uppercase tracking-wide group-hover:text-gray-700 transition-colors duration-300">
+                                        <div className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-widest group-hover:text-gray-600 transition-colors duration-300">
                                             {stat.name}
                                         </div>
                                     </div>
@@ -194,11 +230,11 @@ const StatsAndCTA = () => {
                                 
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                                     <Link 
-                                        to="/register" 
+                                        to={ctaLink} 
                                         className="group w-full sm:w-auto bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all shadow-2xl hover:shadow-violet-600/50 hover:-translate-y-1 hover:scale-105 text-center border border-violet-400/30"
                                     >
                                         <span className="flex items-center justify-center space-x-2">
-                                            <span>Create Free Account</span>
+                                            <span>{ctaText}</span>
                                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                         </span>
                                     </Link>

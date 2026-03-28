@@ -1,9 +1,54 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, UploadCloud, ShieldCheck, Star, Zap, BookOpen, Users } from 'lucide-react';
-import { Link } from 'react-scroll';
+import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 
 const Hero = () => {
+    const [session, setSession] = useState(null);
+    const [role, setRole] = useState('student');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+            setSession(currentSession);
+            if (currentSession?.user) {
+                fetchUserRole(currentSession.user.id);
+            } else {
+                setLoading(false);
+            }
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            if (session?.user) {
+                fetchUserRole(session.user.id);
+            } else {
+                setRole('student');
+                setLoading(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const fetchUserRole = async (userId) => {
+        try {
+            const { data } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', userId)
+                .single();
+            if (data) setRole(data.role);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const dashboardPath = role === 'admin' ? '/admin/dashboard' : '/dashboard';
+    const ctaText = session ? (role === 'admin' ? 'Go to Admin Panel' : 'Go to Dashboard') : 'Get Started Free';
+    const ctaLink = session ? dashboardPath : '/register';
     return (
         <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
             {/* Vibrant Background Image with Overlay */}
@@ -98,9 +143,9 @@ const Hero = () => {
                                 transition={{ delay: 0.4, duration: 0.5 }}
                                 className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
-                                <Users className="w-6 h-6 text-violet-600 mx-auto mb-2" />
-                                <div className="text-2xl font-black text-gray-900">10K+</div>
-                                <div className="text-sm font-bold text-gray-500 uppercase tracking-tighter">Students</div>
+                                <Users className="w-5 h-5 text-violet-600 mx-auto mb-2" />
+                                <div className="text-xl font-bold text-gray-900">10K+</div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Students</div>
                             </motion.div>
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
@@ -108,9 +153,9 @@ const Hero = () => {
                                 transition={{ delay: 0.5, duration: 0.5 }}
                                 className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
-                                <BookOpen className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                                <div className="text-2xl font-black text-gray-900">5K+</div>
-                                <div className="text-sm font-bold text-gray-500 uppercase tracking-tighter">Resources</div>
+                                <BookOpen className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+                                <div className="text-xl font-bold text-gray-900">5K+</div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Resources</div>
                             </motion.div>
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
@@ -118,31 +163,31 @@ const Hero = () => {
                                 transition={{ delay: 0.6, duration: 0.5 }}
                                 className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
-                                <Zap className="w-6 h-6 text-amber-500 mx-auto mb-2" />
-                                <div className="text-2xl font-black text-gray-900">24/7</div>
-                                <div className="text-sm font-bold text-gray-500 uppercase tracking-tighter">Access</div>
+                                <Zap className="w-5 h-5 text-amber-500 mx-auto mb-2" />
+                                <div className="text-xl font-bold text-gray-900">24/7</div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Access</div>
                             </motion.div>
                         </div>
 
                         {/* Enhanced CTAs */}
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
                             <RouterLink
-                                to="/register"
+                                to={ctaLink}
                                 className="group w-full sm:w-auto flex items-center justify-center space-x-3 bg-gradient-to-r from-[#86EFAC] to-[#60A5FA] hover:from-[#60A5FA] hover:to-[#86EFAC] text-white px-8 py-4 rounded-full font-semibold transition-all shadow-2xl shadow-[#86EFAC]/30 transform hover:-translate-y-1 hover:scale-105 border border-[#86EFAC]/30"
                             >
                                 <Zap className="w-5 h-5" />
-                                <span>Get Started Free</span>
+                                <span>{ctaText}</span>
                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </RouterLink>
 
-                            <Link
+                            <ScrollLink
                                 to="features"
                                 smooth={true}
                                 className="group w-full sm:w-auto flex items-center justify-center bg-white/10 backdrop-blur-md border border-[#60A5FA]/30 hover:bg-white/20 text-white hover:text-[#86EFAC] px-8 py-4 rounded-full font-semibold transition-all transform hover:-translate-y-1 hover:scale-105"
                             >
                                 <BookOpen className="w-5 h-5 mr-2" />
                                 Explore Resources
-                            </Link>
+                            </ScrollLink>
                         </div>
                     </motion.div>
 
