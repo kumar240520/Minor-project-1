@@ -4,7 +4,7 @@ import {
     Search, Bell, Calendar, Award,
     TrendingUp, FileText, CheckCircle, Clock, Folder
 } from 'lucide-react';
-import Sidebar, { SidebarProvider } from '../components/Sidebar';
+import Sidebar from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -319,7 +319,6 @@ const Dashboard = () => {
                 </main>
             </div>
         </div>
-    </SidebarProvider>
     );
 };
 

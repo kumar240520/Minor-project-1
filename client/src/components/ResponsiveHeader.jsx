@@ -91,8 +91,8 @@ const ResponsiveHeader = ({
       { id: 'p6', title: 'Calendar', path: '/calendar', icon: 'Calendar', desc: 'Events and schedules' },
       { id: 'p7', title: 'Rewards', path: '/rewards', icon: 'Award', desc: 'EduCoins & Leaderboard' },
       { id: 'p8', title: 'Settings', path: '/settings', icon: 'Settings', desc: 'Profile and preferences' },
-      { id: 'p9', title: 'Support & Help', path: '/support', icon: 'HelpCircle', desc: 'Tickets and assistance' },
-      { id: 'p10', title: 'Notifications', path: '/notifications', icon: 'Bell', desc: 'Your recent alerts' },
+      { id: 'p9', title: 'Help & Support', path: '/help', icon: 'HelpCircle', desc: 'Tickets and assistance' },
+      { id: 'p10', title: 'Notifications', path: '/dashboard', icon: 'Bell', desc: 'Your recent alerts' },
     ];
     
     const pageResults = appPages
@@ -305,7 +305,7 @@ const ResponsiveHeader = ({
         )}
 
         {showNotifications && (
-          <Link to="/notifications" className="relative p-2 text-gray-400 hover:text-violet-600 transition-colors rounded-full hover:bg-violet-50 block">
+          <Link to="/dashboard" className="relative p-2 text-gray-400 hover:text-violet-600 transition-colors rounded-full hover:bg-violet-50 block">
             <Bell className="h-5 w-5 lg:h-6 lg:w-6" />
             {unreadCount > 0 && (
               <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white flex items-center justify-center text-[9px] font-bold rounded-full border-2 border-white shadow-sm">

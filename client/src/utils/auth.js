@@ -65,7 +65,7 @@ export class InvalidUserRoleError extends Error {
 }
 
 export const getRedirectPathForRole = (role) =>
-  role === 'admin' ? '/admin-dashboard' : '/dashboard';
+  role === 'admin' ? '/admin/dashboard' : '/dashboard';
 
 export const isValidInstitutionalEmail = (email) => {
   if (!email) return false;

@@ -19,9 +19,9 @@ import { supabase } from '../../supabaseClient';
 const AdminSidebar = () => {
     const location = useLocation();
 
-    const adminBasePath = '/admin-dashboard';
+    const adminBasePath = '/admin';
     const navItems = [
-        { path: adminBasePath, label: 'Overview', icon: LayoutDashboard },
+        { path: `${adminBasePath}/dashboard`, label: 'Overview', icon: LayoutDashboard },
         { path: `${adminBasePath}/approvals`, label: 'Pending Approvals', icon: Clock3 },
         { path: `${adminBasePath}/materials`, label: 'Materials Approval', icon: FileCheck },
         { path: `${adminBasePath}/pyqs`, label: 'PYQ Approval', icon: BookOpenCheck },

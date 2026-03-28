@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Bell, Settings as SettingsIcon, User, Lock, Shield, CreditCard, BellRing, HelpCircle, Award } from 'lucide-react';
-import Sidebar, { SidebarProvider } from '../components/Sidebar';
+import Sidebar from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
 
@@ -94,17 +94,16 @@ const Settings = () => {
     };
 
     return (
-        <SidebarProvider>
-            <div className="min-h-screen bg-gray-50 flex">
-                <Sidebar />
+        <div className="min-h-screen bg-gray-50 flex">
+            <Sidebar />
 
-                <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
-                    <ResponsiveHeader 
-                        title="Settings"
-                        showSearch={true}
-                        showNotifications={true}
-                        showProfile={true}
-                    />
+            <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
+                <ResponsiveHeader 
+                    title="Settings"
+                    showSearch={true}
+                    showNotifications={true}
+                    showProfile={true}
+                />
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50/50">
                     <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8">

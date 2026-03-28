@@ -26,12 +26,20 @@ const Calendar = lazy(() => import('./pages/Calendar'));
 const Rewards = lazy(() => import('./pages/Rewards'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Upload = lazy(() => import('./pages/Upload'));
+const Profile = lazy(() => import('./pages/Profile'));
 const Help = lazy(() => import('./pages/Help'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminApprovals = lazy(() => import('./pages/admin/AdminApprovals'));
 const AdminMaterials = lazy(() => import('./pages/admin/AdminMaterials'));
 const AdminPYQs = lazy(() => import('./pages/admin/AdminPYQs'));
+const AdminRewards = lazy(() => import('./pages/admin/AdminRewards'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminTransactions = lazy(() => import('./pages/admin/AdminTransactions'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
+const AdminTickets = lazy(() => import('./pages/admin/AdminTickets'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 
 const Home = () => (
   <>
@@ -77,12 +85,20 @@ function App() {
             <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
 
             <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
             <Route path="/admin/approvals" element={<AdminGuard><AdminApprovals /></AdminGuard>} />
             <Route path="/admin/materials" element={<AdminGuard><AdminMaterials /></AdminGuard>} />
             <Route path="/admin/pyqs" element={<AdminGuard><AdminPYQs /></AdminGuard>} />
+            <Route path="/admin/rewards" element={<AdminGuard><AdminRewards /></AdminGuard>} />
+            <Route path="/admin/users" element={<AdminGuard><AdminUsers /></AdminGuard>} />
+            <Route path="/admin/transactions" element={<AdminGuard><AdminTransactions /></AdminGuard>} />
+            <Route path="/admin/reports" element={<AdminGuard><AdminReports /></AdminGuard>} />
+            <Route path="/admin/events" element={<AdminGuard><AdminEvents /></AdminGuard>} />
+            <Route path="/admin/tickets" element={<AdminGuard><AdminTickets /></AdminGuard>} />
+            <Route path="/admin/analytics" element={<AdminGuard><AdminAnalytics /></AdminGuard>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

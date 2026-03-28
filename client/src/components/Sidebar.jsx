@@ -127,7 +127,7 @@ const Sidebar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black bg-opacity-50 z-[9999] lg:hidden"
             onClick={closeSidebar}
           />
           
@@ -137,7 +137,7 @@ const Sidebar = () => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 left-0 z-50 w-60 h-screen bg-white shadow-2xl lg:hidden"
+            className="fixed top-0 left-0 z-[9999] w-60 h-screen bg-white shadow-2xl lg:hidden"
           >
             {/* Header */}
             <div className="px-5 py-5 border-b border-gray-100">
