@@ -16,7 +16,20 @@ const Login = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const handleGoogleSignIn = async () => {
+    const getRedirectUrl = () => {
+    const isDevelopment = import.meta.env.DEV;
+    const baseUrl = window.location.origin;
+    
+    if (isDevelopment) {
+        // Development uses localhost with current port
+        return `${baseUrl}/auth/callback`;
+    }
+    
+    // Production uses hiteshkumar24.in
+    return 'https://hiteshkumar24.in/auth/callback';
+};
+
+const handleGoogleSignIn = async () => {
         setError(null);
         setIsGoogleLoading(true);
 
@@ -24,7 +37,7 @@ const Login = () => {
             const { data, error: googleError } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback`
+                    redirectTo: getRedirectUrl()
                 }
             });
 
@@ -178,7 +191,13 @@ const Login = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-medium text-gray-700">Password</label>
-                                    <button type="button" className="text-xs font-medium text-violet-600 hover:text-fuchsia-600 transition-colors">Forgot password?</button>
+                                    <button 
+                                    type="button" 
+                                    onClick={() => navigate('/forgot-password')}
+                                    className="text-xs font-medium text-violet-600 hover:text-fuchsia-600 transition-colors cursor-pointer"
+                                >
+                                    Forgot password?
+                                </button>
                                 </div>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

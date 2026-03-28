@@ -9,7 +9,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     auth: {
         detectSessionInUrl: true,
         flowType: 'pkce',
-        redirectTo: window.location.origin + '/email-verification'
+        redirectTo: () => {
+            const isDevelopment = import.meta.env.DEV;
+            const baseUrl = window.location.origin;
+            
+            if (isDevelopment) {
+                return `${baseUrl}/auth/callback`;
+            }
+            
+            return 'https://hiteshkumar24.in/auth/callback';
+        }
     }
 });
 
