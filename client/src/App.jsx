@@ -1,5 +1,5 @@
-import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter as Router, Navigate, Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -86,13 +86,52 @@ const RouteLoader = () => (
   </div>
 );
 
+const HomeWithOAuthHandler = () => {
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const code = searchParams.get('code');
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+
+    // If we have OAuth parameters in the root URL, redirect to auth callback
+    if (code || error) {
+      const params = new URLSearchParams();
+      if (code) params.set('code', code);
+      if (error) params.set('error', error);
+      if (errorDescription) params.set('error_description', errorDescription);
+      
+      // Preserve other parameters that might be needed
+      searchParams.forEach((value, key) => {
+        if (key !== 'code' && key !== 'error' && key !== 'error_description') {
+          params.set(key, value);
+        }
+      });
+
+      window.location.href = `/auth/callback?${params.toString()}`;
+    }
+  }, [location, searchParams]);
+
+  // Show loading while checking for OAuth params
+  const code = searchParams.get('code');
+  const error = searchParams.get('error');
+  
+  if (code || error) {
+    return <RouteLoader />;
+  }
+
+  // Otherwise show the regular home page
+  return <Home />;
+};
+
 function App() {
   return (
     <Router>
       <div className="font-sans text-gray-900 selection:bg-violet-500 selection:text-white">
         <Suspense fallback={<RouteLoader />}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomeWithOAuthHandler />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

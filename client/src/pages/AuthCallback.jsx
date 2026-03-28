@@ -16,8 +16,76 @@ const AuthCallback = () => {
         const handleAuthCallback = async () => {
             const accessToken = searchParams.get('access_token');
             const refreshToken = searchParams.get('refresh_token');
+            const code = searchParams.get('code');
+            const error = searchParams.get('error');
             const provider = searchParams.get('provider'); // This will be 'google' for Google OAuth
 
+            if (error) {
+                setStatus('error');
+                setMessage(`Authentication failed: ${error}`);
+                return;
+            }
+
+            // Handle OAuth code flow (Google OAuth)
+            if (code && !accessToken) {
+                try {
+                    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+                    
+                    if (exchangeError) {
+                        throw exchangeError;
+                    }
+
+                    if (data?.session) {
+                        // Successfully exchanged code for session
+                        const user = data.session.user;
+                        
+                        // For OAuth users (Google), ensure they have a student profile
+                        try {
+                            await ensureStudentProfile({
+                                id: user.id,
+                                email: user.email,
+                                fullName: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Google User',
+                            });
+                        } catch (profileError) {
+                            if (isRowLevelSecurityError(profileError)) {
+                                setError('Your account was created, but the users table blocked profile creation. Contact support to finish setup.');
+                            } else {
+                                setError(profileError.message || 'Your account was created, but your student profile could not be initialized.');
+                            }
+                        }
+
+                        // Get user role and redirect
+                        try {
+                            const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
+                            const redirectPath = getRedirectPathForRole(role);
+                            
+                            setStatus('success');
+                            setMessage('Authentication successful! Redirecting to your dashboard...');
+                            
+                            // Redirect after a short delay
+                            setTimeout(() => {
+                                navigate(redirectPath, { replace: true });
+                            }, 1500);
+                        } catch (roleError) {
+                            setStatus('success');
+                            setMessage('Authentication successful! Please sign in to complete setup.');
+                            
+                            setTimeout(() => {
+                                navigate('/login', { replace: true });
+                            }, 1500);
+                        }
+                    } else {
+                        throw new Error('No session received after code exchange');
+                    }
+                } catch (error) {
+                    console.error('Code exchange error:', error);
+                    setStatus('error');
+                    setMessage('Failed to complete authentication. Please try again.');
+                }
+                return;
+            }
+
+            // Handle direct token flow
             if (!accessToken || !refreshToken) {
                 setStatus('error');
                 setMessage('Invalid authentication callback. Please try again.');

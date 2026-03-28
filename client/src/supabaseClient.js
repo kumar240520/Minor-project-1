@@ -5,20 +5,22 @@ export const SUPABASE_URL =
 export const SUPABASE_PUBLIC_KEY =
     import.meta.env.VITE_SUPABASE_PUBLIC_KEY || 'sb_publishable_riQhamrU4Pwjay2fdMMkmw_ymryt0zi';
 
+const getAuthRedirectUrl = () => {
+    const isDevelopment = import.meta.env.DEV;
+    const baseUrl = window.location.origin;
+    
+    if (isDevelopment) {
+        return `${baseUrl}/auth/callback`;
+    }
+    
+    return 'https://hiteshkumar24.in/auth/callback';
+};
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     auth: {
         detectSessionInUrl: true,
         flowType: 'pkce',
-        redirectTo: () => {
-            const isDevelopment = import.meta.env.DEV;
-            const baseUrl = window.location.origin;
-            
-            if (isDevelopment) {
-                return `${baseUrl}/auth/callback`;
-            }
-            
-            return 'https://hiteshkumar24.in/auth/callback';
-        }
+        redirectTo: getAuthRedirectUrl()
     }
 });
 
