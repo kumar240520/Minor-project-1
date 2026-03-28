@@ -188,7 +188,7 @@ const AdminDashboard = () => {
     const statCards = [
         { title: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
         { title: 'Total Materials', value: stats.totalMaterials, icon: FileText, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
-        { title: 'Pending Approvals', value: stats.pendingApprovals, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', link: '/admin-dashboard/approvals' },
+        { title: 'Pending Approvals', value: stats.pendingApprovals, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', link: '/admin/approvals' },
         { title: 'Total Downloads', value: stats.totalDownloads.toLocaleString(), icon: Download, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
         { title: 'Coins Distributed', value: stats.totalCoins.toLocaleString(), icon: Award, color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-100' },
         { title: 'Community Posts', value: stats.totalPosts, icon: MessageSquare, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
@@ -364,7 +364,7 @@ const AdminDashboard = () => {
                                     <p className="text-sm text-slate-400 mt-0.5">Latest student uploads waiting for review</p>
                                 </div>
                                 <Link
-                                    to="/admin-dashboard/approvals"
+                                    to="/admin/approvals"
                                     className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors"
                                 >
                                     Open Approval Panel
@@ -434,7 +434,7 @@ const AdminDashboard = () => {
                             <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                                 <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                                     <h2 className="text-base font-bold text-slate-800">Recent Transaction Activity</h2>
-                                    <Link to="/admin-dashboard/transactions" className="text-xs font-semibold text-violet-600 hover:underline">View All →</Link>
+                                    <Link to="/admin/transactions" className="text-xs font-semibold text-violet-600 hover:underline">View All →</Link>
                                 </div>
                                 <div className="divide-y divide-slate-50">
                                     {loading ? (
@@ -496,7 +496,7 @@ const AdminDashboard = () => {
                                     <h3 className="font-semibold text-slate-800 mb-1">Upcoming Events</h3>
                                     <p className="text-sm text-slate-400 mb-5">Active events engaging the student community.</p>
                                     <Link
-                                        to="/admin-dashboard/events"
+                                        to="/admin/events"
                                         className="w-full py-2.5 bg-violet-600 text-white rounded-lg font-medium text-sm hover:bg-violet-700 transition-colors inline-block text-center"
                                     >
                                         Manage Events

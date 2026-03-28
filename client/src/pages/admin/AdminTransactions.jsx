@@ -104,6 +104,8 @@ const AdminTransactions = () => {
                             </div>
                         </div>
 
+                        </div>
+
                         {/* Transactions Table */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
@@ -186,7 +188,6 @@ const AdminTransactions = () => {
                                 </tbody>
                             </table>
                             </div>
-                        </div>
                         </div>
                     </div>
                 </main>

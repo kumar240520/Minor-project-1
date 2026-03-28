@@ -158,10 +158,17 @@ const ResponsiveHeader = ({
   const hasResults = searchResults.pages.length > 0 || searchResults.materials.length > 0 || searchResults.events.length > 0;
 
   return (
-    <header className={`bg-white border-b border-gray-200 h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 z-30 shrink-0 ${className}`}>
+    <header className={`bg-white border-b border-gray-200 h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 z-40 shrink-0 ${className}`}>
       <div className="flex items-center space-x-3 lg:space-x-0">
-        <button onClick={toggleSidebar} className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <Menu className="h-5 w-5 text-gray-600" />
+        <button 
+          onClick={() => {
+            console.log('Mobile menu button clicked');
+            toggleSidebar();
+          }} 
+          className="lg:hidden p-3 rounded-lg hover:bg-gray-100 transition-colors relative z-50 cursor-pointer active:scale-95"
+          aria-label="Toggle menu"
+        >
+          <Menu className="h-6 w-6 text-gray-700" />
         </button>
         <h1 className="text-lg lg:text-2xl font-bold text-gray-800 truncate">{title}</h1>
       </div>

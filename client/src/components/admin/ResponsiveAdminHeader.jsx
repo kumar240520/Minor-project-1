@@ -31,7 +31,7 @@ const buildNotifications = ({ pendingMaterials, recentTxns, recentUsers }) => {
             title: 'Pending Approval',
             body: `"${m.title || m.subject || 'Untitled'}" needs your review`,
             time: m.created_at,
-            link: '/admin-dashboard/approvals',
+            link: '/admin/approvals',
             dot: 'bg-amber-500',
             bg: 'bg-amber-50 hover:bg-amber-100',
             border: 'border-l-2 border-amber-400',
@@ -51,7 +51,7 @@ const buildNotifications = ({ pendingMaterials, recentTxns, recentUsers }) => {
             title: earn ? 'Coins Earned' : 'Coins Spent',
             body: tx.description || `${earn ? '+' : '-'}${tx.amount} coins — ${tx.reference_type}`,
             time: tx.created_at,
-            link: '/admin-dashboard/transactions',
+            link: '/admin/transactions',
             dot: earn ? 'bg-emerald-500' : 'bg-rose-500',
             bg: earn ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-rose-50 hover:bg-rose-100',
             border: earn ? 'border-l-2 border-emerald-400' : 'border-l-2 border-rose-400',
@@ -70,7 +70,7 @@ const buildNotifications = ({ pendingMaterials, recentTxns, recentUsers }) => {
             title: 'New User Registered',
             body: `${u.name || u.email || 'A student'} just joined EduSure`,
             time: u.created_at,
-            link: '/admin-dashboard/users',
+            link: '/admin/users',
             dot: 'bg-blue-500',
             bg: 'bg-blue-50 hover:bg-blue-100',
             border: 'border-l-2 border-blue-400',
@@ -385,7 +385,7 @@ const ResponsiveAdminHeader = ({ title, subtitle, onMobileMenuToggle }) => {
                                             <div className="px-4 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
                                                 <p className="text-xs text-slate-400">Last 7 days • refreshes every 30s</p>
                                                 <Link
-                                                    to="/admin-dashboard/approvals"
+                                                    to="/admin/approvals"
                                                     onClick={() => setNotificationsOpen(false)}
                                                     className="text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors flex items-center gap-1"
                                                 >
@@ -430,7 +430,7 @@ const ResponsiveAdminHeader = ({ title, subtitle, onMobileMenuToggle }) => {
                                         </div>
                                         <div className="p-2">
                                             <Link
-                                                to="/admin-dashboard"
+                                                to="/admin"
                                                 onClick={() => setProfileOpen(false)}
                                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors text-left"
                                             >
