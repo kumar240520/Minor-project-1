@@ -88,188 +88,76 @@ const RouteLoader = () => (
 );
 
 const HomeWithOAuthHandler = () => {
-  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
   const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    const processOAuthTokens = async () => {
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
+    const handleOAuth = async () => {
       const code = searchParams.get('code');
       const error = searchParams.get('error');
-
-      // Debug logging
-      console.log('OAuth Handler Debug:', {
-        accessToken,
-        refreshToken,
-        code,
-        error,
-        allParams: Object.fromEntries(searchParams.entries())
-      });
-
+      
+      console.log('OAuth Check - Code:', code, 'Error:', error);
+      
       // Only process if we have OAuth parameters
-      if (!accessToken && !refreshToken && !code && !error) {
-        return; // No OAuth parameters, show normal home page
+      if (!code && !error) {
+        console.log('No OAuth parameters, showing home');
+        return;
       }
 
-      setIsProcessingOAuth(true);
+      console.log('Processing OAuth...');
+      setIsProcessing(true);
 
       try {
         if (error) {
           console.error('OAuth Error:', error);
-          // Handle OAuth error - redirect to login with error
-          navigate('/login', { 
-            state: { 
-              error: `Authentication failed: ${error}` 
-            } 
-          });
+          navigate('/login', { state: { error: `Authentication failed: ${error}` } });
           return;
         }
 
-        // Handle OAuth code flow
-        if (code && !accessToken) {
-          console.log('Processing OAuth code...');
+        if (code) {
+          console.log('Exchanging code for session...');
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
           if (exchangeError) {
-            console.error('Code exchange error:', exchangeError);
-            navigate('/login', { 
-              state: { 
-                error: exchangeError.message || 'Failed to complete authentication' 
-              } 
-            });
+            console.error('Exchange Error:', exchangeError);
+            navigate('/login', { state: { error: exchangeError.message } });
             return;
           }
 
-          if (data?.session?.user) {
-            console.log('Successfully exchanged code for session');
-            // Create user profile if needed
-            try {
-              const { ensureStudentProfile } = await import('./utils/auth');
-              await ensureStudentProfile({
-                id: data.session.user.id,
-                email: data.session.user.email,
-                fullName: data.session.user.user_metadata?.full_name || 
-                         data.session.user.user_metadata?.name || 
-                         data.session.user.email?.split('@')[0] || 
-                         'Google User',
-              });
-            } catch (profileError) {
-              console.warn('Profile creation warning:', profileError);
-            }
-
-            // Get user role and redirect
-            try {
-              const { getAuthenticatedUserWithRole, getRedirectPathForRole } = await import('./utils/auth');
-              const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
-              const redirectPath = getRedirectPathForRole(role);
-              
-              console.log('Redirecting to:', redirectPath);
-              navigate(redirectPath, { replace: true });
-            } catch (roleError) {
-              console.warn('Role detection warning:', roleError);
-              navigate('/dashboard', { replace: true });
-            }
-          }
-          return;
+          console.log('Session established:', data);
+          
+          // Simple redirect to dashboard
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 1000);
         }
-
-        // Handle direct token flow
-        if (accessToken && refreshToken) {
-          console.log('Processing OAuth tokens...');
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-
-          if (sessionError) {
-            console.error('Session setting error:', sessionError);
-            navigate('/login', { 
-              state: { 
-                error: sessionError.message || 'Failed to set session' 
-              } 
-            });
-            return;
-          }
-
-          if (data?.user) {
-            console.log('Successfully set session');
-            // Create user profile if needed
-            try {
-              const { ensureStudentProfile } = await import('./utils/auth');
-              await ensureStudentProfile({
-                id: data.user.id,
-                email: data.user.email,
-                fullName: data.user.user_metadata?.full_name || 
-                         data.user.user_metadata?.name || 
-                         data.user.email?.split('@')[0] || 
-                         'Google User',
-              });
-            } catch (profileError) {
-              console.warn('Profile creation warning:', profileError);
-            }
-
-            // Get user role and redirect
-            try {
-              const { getAuthenticatedUserWithRole, getRedirectPathForRole } = await import('./utils/auth');
-              const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
-              const redirectPath = getRedirectPathForRole(role);
-              
-              console.log('Redirecting to:', redirectPath);
-              navigate(redirectPath, { replace: true });
-            } catch (roleError) {
-              console.warn('Role detection warning:', roleError);
-              navigate('/dashboard', { replace: true });
-            }
-          }
-        }
-      } catch (error) {
-        console.error('OAuth processing error:', error);
-        navigate('/login', { 
-          state: { 
-            error: error.message || 'Authentication processing failed' 
-          } 
-        });
+      } catch (err) {
+        console.error('OAuth Processing Error:', err);
+        navigate('/login', { state: { error: 'Authentication failed' } });
       } finally {
-        setIsProcessingOAuth(false);
+        setIsProcessing(false);
       }
     };
 
-    processOAuthTokens();
-  }, [location, searchParams, navigate]);
+    handleOAuth();
+  }, [searchParams, navigate]);
 
-  // Show loading while processing OAuth
-  if (isProcessingOAuth) {
+  // Show loading if processing OAuth
+  if (isProcessing || searchParams.get('code') || searchParams.get('error')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Completing authentication...</p>
+          <p className="text-gray-600">
+            {searchParams.get('error') ? 'Authentication failed...' : 'Completing sign in...'}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Check if we have OAuth parameters (show loading instead of home page)
-  const hasOAuthParams = searchParams.get('access_token') || 
-                        searchParams.get('refresh_token') || 
-                        searchParams.get('code') || 
-                        searchParams.get('error');
-
-  if (hasOAuthParams) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Processing authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Otherwise show the regular home page
+  // Show normal home page
   return <Home />;
 };
 
