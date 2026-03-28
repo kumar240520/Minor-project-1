@@ -150,7 +150,7 @@ export const getAuthenticatedUserWithRole = async ({ initializeStudentProfile = 
 };
 
 export const ensureStudentProfile = async ({ id, email, fullName }) => {
-  const displayName = getDisplayName({ name: fullName, email });
+  const displayName = fullName || getDisplayName({ email });
   const upsertOptions = {
     onConflict: 'id',
     ignoreDuplicates: true,

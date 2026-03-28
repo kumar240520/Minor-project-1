@@ -1,17 +1,43 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Mail, Lock, User, UserPlus, ArrowLeft } from 'lucide-react';
+import { BookOpen, Mail, Lock, User, UserPlus, ArrowLeft, Clock, RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ensureStudentProfile, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
+import { useOTP } from '../hooks/useOTP';
+import OTPInput from '../components/OTPInput';
 
 const Register = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const [successMsg, setSuccessMsg] = useState(null);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+    
+    // OTP states
+    const [currentStep, setCurrentStep] = useState('form'); // 'form' | 'otp'
+    const [isSendingOTP, setIsSendingOTP] = useState(false);
+    const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+    const [pendingUserData, setPendingUserData] = useState(null);
+    
+    // OTP hook
+    const {
+        otp,
+        timer,
+        isTimerActive,
+        canResend,
+        handleOtpChange,
+        handleKeyDown,
+        handlePaste,
+        clearOtp,
+        getOtpString,
+        isOtpComplete,
+        startTimer,
+        allowResend
+    } = useOTP();
 
 
 
@@ -38,58 +64,152 @@ const handleGoogleSignUp = async () => {
         }
     };
 
-    const handleSubmit = async (e) => {
+    // Handle form submission and send OTP
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setSuccessMsg(null);
+        setIsSubmitting(true);
         
         if (!isValidInstitutionalEmail(email)) {
              setError('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed.');
+             setIsSubmitting(false);
              return;
         }
         
-        const { data, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    name,
-                    full_name: name,
+        try {
+            // Send OTP for email verification
+            const { error: otpError } = await supabase.auth.signInWithOtp({
+                email: email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/callback`
                 }
-            }
-        });
+            });
 
-        if (signUpError) {
-            setError(signUpError.message);
+            if (otpError) {
+                throw otpError;
+            }
+
+            // Store user data and move to OTP step
+            setPendingUserData({ name, email, password });
+            setSuccessMsg('OTP sent successfully! Please check your email to verify your account.');
+            setCurrentStep('otp');
+            startTimer();
+        } catch (err) {
+            setError(err.message || 'Failed to send OTP. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Verify OTP and complete registration
+    const handleVerifyOTP = async (e) => {
+        e.preventDefault();
+        setError(null);
+        setSuccessMsg(null);
+        setIsVerifyingOTP(true);
+
+        if (!isOtpComplete()) {
+            setError('Please enter all 8 digits of the OTP.');
+            setIsVerifyingOTP(false);
             return;
         }
 
         try {
-            if (data.user && data.session) {
-                await ensureStudentProfile({
-                    id: data.user.id,
-                    email,
-                    fullName: name,
-                });
-            }
-        } catch (profileError) {
-            if (isRowLevelSecurityError(profileError)) {
-                setError('Your account was created, but the users table blocked profile creation. Apply the Supabase users insert policy or trigger, then sign in once to finish setup.');
-            } else {
-                setError(profileError.message || 'Your account was created, but your student profile could not be initialized.');
-            }
-            return;
-        }
-
-        if (!data.session) {
-            navigate('/login', { 
-                state: { 
-                    email: email, 
-                    message: "Your account has been created. Please check your email, verify your address, and then sign in once to finish profile setup." 
-                } 
+            // First verify the OTP
+            const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+                email: pendingUserData.email,
+                token: getOtpString(),
+                type: 'email'
             });
-        } else {
-            navigate('/dashboard', { replace: true });
+
+            if (verifyError) {
+                throw verifyError;
+            }
+
+            // If OTP is verified, now create the account
+            const { data, error: signUpError } = await supabase.auth.signUp({
+                email: pendingUserData.email,
+                password: pendingUserData.password,
+                options: {
+                    data: {
+                        name: pendingUserData.name,
+                        full_name: pendingUserData.name,
+                    }
+                }
+            });
+
+            if (signUpError) {
+                throw signUpError;
+            }
+
+            setSuccessMsg('Account created successfully! Setting up your profile...');
+
+            // Create student profile
+            try {
+                if (data.user && data.session) {
+                    await ensureStudentProfile({
+                        id: data.user.id,
+                        email: pendingUserData.email,
+                        fullName: pendingUserData.name,
+                    });
+                }
+            } catch (profileError) {
+                if (isRowLevelSecurityError(profileError)) {
+                    console.error('Profile creation error:', profileError);
+                }
+            }
+
+            // Navigate to dashboard
+            setTimeout(() => {
+                navigate('/dashboard', { replace: true });
+            }, 1500);
+            
+        } catch (err) {
+            if (err.message?.includes('Invalid OTP') || err.message?.includes('expired')) {
+                setError('Invalid or expired OTP. Please request a new one.');
+                clearOtp();
+                allowResend();
+            } else {
+                setError(err.message || 'Failed to verify OTP. Please try again.');
+            }
+        } finally {
+            setIsVerifyingOTP(false);
         }
+    };
+
+    // Resend OTP
+    const handleResendOTP = async () => {
+        setError(null);
+        setSuccessMsg(null);
+        setIsSendingOTP(true);
+
+        try {
+            const { error: resendError } = await supabase.auth.resend({
+                type: 'signup',
+                email: pendingUserData.email,
+            });
+
+            if (resendError) {
+                throw resendError;
+            }
+
+            setSuccessMsg('OTP resent successfully! Please check your email.');
+            clearOtp();
+            startTimer();
+        } catch (err) {
+            setError(err.message || 'Failed to resend OTP. Please try again.');
+        } finally {
+            setIsSendingOTP(false);
+        }
+    };
+
+    // Go back to form
+    const handleBackToForm = () => {
+        setCurrentStep('form');
+        clearOtp();
+        setError(null);
+        setSuccessMsg(null);
     };
 
     return (
@@ -160,77 +280,172 @@ const handleGoogleSignUp = async () => {
                             <span className="text-2xl font-bold text-gray-900">EduSure</span>
                         </div>
 
-                        <h3 className="text-3xl font-extrabold text-gray-900 mb-2">Create Account</h3>
-                        <p className="text-gray-500 mb-8">Sign up to get started with EduSure.</p>
+                        <h3 className="text-3xl font-extrabold text-gray-900 mb-2">
+                            {currentStep === 'form' ? 'Create Account' : 'Verify Your Email'}
+                        </h3>
+                        <p className="text-gray-500 mb-8">
+                            {currentStep === 'form' 
+                                ? 'Sign up to get started with EduSure.' 
+                                : `Enter the 8-digit code sent to ${pendingUserData?.email || email}`
+                            }
+                        </p>
+
+                        {successMsg && (
+                            <div className="mb-6 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl flex items-center">
+                                <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                                {successMsg}
+                            </div>
+                        )}
 
                         {error && (
-                            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl">
+                            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-center">
+                                <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
                                 {error}
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <User className="h-5 w-5 text-gray-400" />
+                        {/* Registration Form */}
+                        {currentStep === 'form' && (
+                            <form onSubmit={handleFormSubmit} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <User className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
+                                            placeholder="John Doe"
+                                        />
                                     </div>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                        placeholder="John Doe"
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Mail className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
+                                            placeholder="0808...ies@ipsacademy.org"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-gray-700">Password</label>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Lock className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="password"
+                                            required
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                            Sending OTP...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <UserPlus className="w-5 h-5 mr-2" />
+                                            Create Account
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* OTP Verification Form */}
+                        {currentStep === 'otp' && (
+                            <form onSubmit={handleVerifyOTP} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
+                                        Enter 8-digit code
+                                    </label>
+                                    <OTPInput
+                                        otp={otp}
+                                        onChange={handleOtpChange}
+                                        onKeyDown={handleKeyDown}
+                                        onPaste={handlePaste}
+                                        disabled={isVerifyingOTP}
                                     />
                                 </div>
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <Mail className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <input
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                        placeholder="0808...ies@ipsacademy.org"
-                                    />
+                                <div className="text-center space-y-2">
+                                    {isTimerActive && (
+                                        <div className="flex items-center justify-center text-gray-500">
+                                            <Clock className="w-4 h-4 mr-2" />
+                                            <span className="text-sm">
+                                                Resend OTP in {timer}s
+                                            </span>
+                                        </div>
+                                    )}
+                                    
+                                    {canResend && (
+                                        <button
+                                            type="button"
+                                            onClick={handleResendOTP}
+                                            disabled={isSendingOTP}
+                                            className="inline-flex items-center text-violet-600 hover:text-violet-700 text-sm font-medium transition-colors disabled:opacity-50"
+                                        >
+                                            <RefreshCw className={`w-4 h-4 mr-2 ${isSendingOTP ? 'animate-spin' : ''}`} />
+                                            {isSendingOTP ? 'Resending...' : 'Resend OTP'}
+                                        </button>
+                                    )}
                                 </div>
-                            </div>
 
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">Password</label>
-                                </div>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <Lock className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <input
-                                        type="password"
-                                        required
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                            </div>
+                                <button
+                                    type="submit"
+                                    disabled={isVerifyingOTP || !isOtpComplete()}
+                                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                    {isVerifyingOTP ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                            Verifying...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle className="w-5 h-5 mr-2" />
+                                            Sign Up
+                                        </>
+                                    )}
+                                </button>
 
-                            <button
-                                type="submit"
-                                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-2"
-                            >
-                                <UserPlus className="w-5 h-5 mr-2" />
-                                Create Account
-                            </button>
-                        </form>
+                                <button
+                                    type="button"
+                                    onClick={handleBackToForm}
+                                    className="w-full flex justify-center items-center py-3 px-4 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                >
+                                    Back to Form
+                                </button>
+                            </form>
+                        )}
 
                         <div className="mt-8 relative">
                             <div className="absolute inset-0 flex items-center" aria-hidden="true">
