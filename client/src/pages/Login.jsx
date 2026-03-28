@@ -6,7 +6,6 @@ import { supabase } from '../supabaseClient';
 import { getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
 import { useOTP } from '../hooks/useOTP';
 import OTPInput from '../components/OTPInput';
-import { generateOTPCode, sendOTPCode, verifyOTPCode } from '../utils/otpService';
 
 const Login = () => {
     const navigate = useNavigate();
