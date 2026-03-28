@@ -9,6 +9,7 @@
     "build": "vite build",
     "build:netlify": "vite build --mode netlify",
     "build:vercel": "vite build --mode vercel",
+    "build:railway": "vite build --mode railway",
     "preview": "vite preview",
     "lint": "eslint ."
   },
