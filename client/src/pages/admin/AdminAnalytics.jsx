@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ResponsiveAdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
+import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader';
 import { supabase } from '../../supabaseClient';
 import {
     BarChart3, Users, FileText, Gift, Download, TrendingUp,
@@ -264,17 +265,15 @@ const AdminAnalytics = () => {
         <div className="h-screen bg-slate-50 overflow-hidden flex">
             <ResponsiveAdminSidebar />
 
-            <main className="flex-1 overflow-y-auto p-6 lg:p-8 lg:ml-64 xl:ml-72">
-                {/* Header */}
-                <header className="mb-8">
-                    <h1 className="text-2xl font-bold text-slate-800 flex items-center">
-                        <BarChart3 className="w-6 h-6 mr-3 text-violet-600" />
-                        Platform Analytics
-                    </h1>
-                    <p className="text-slate-400 text-sm mt-1">Live data from your Supabase database — refreshes on every visit</p>
-                </header>
+            <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
+                <ResponsiveAdminHeader 
+                    title="Platform Analytics" 
+                    subtitle="Live data from your Supabase database — refreshes on every visit"
+                    onMobileMenuToggle={() => {}}
+                />
 
-                <div className="space-y-6">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                    <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
                     {/* ── Row 1: Stat Cards ── */}
                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                         <StatCard loading={loading} title="Total Users" value={stats.totalUsers.toLocaleString()} subtitle={`${stats.newUsersThisMonth} new this month`} icon={Users} color="text-blue-600" bgColor="bg-blue-500" trend="up" trendValue={`+${stats.newUsersThisMonth}`} />
@@ -455,8 +454,9 @@ const AdminAnalytics = () => {
                         </div>
                     </div>
 
-                </div>
-            </main>
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

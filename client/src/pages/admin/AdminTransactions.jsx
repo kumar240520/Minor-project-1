@@ -103,10 +103,9 @@ const AdminTransactions = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        </div>
-
-                        {/* Transactions Table */}
+                    {/* Transactions Table */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
                                 <h2 className="font-semibold text-slate-800 flex items-center">
