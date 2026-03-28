@@ -96,11 +96,14 @@ const HomeWithOAuthHandler = () => {
     const handleOAuth = async () => {
       const code = searchParams.get('code');
       const error = searchParams.get('error');
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
       
-      console.log('OAuth Check - Code:', code, 'Error:', error);
+      console.log('OAuth Check - Code:', code, 'Error:', error, 'AccessToken:', !!accessToken, 'RefreshToken:', !!refreshToken);
+      console.log('All URL params:', Object.fromEntries(searchParams.entries()));
       
       // Only process if we have OAuth parameters
-      if (!code && !error) {
+      if (!code && !error && !accessToken && !refreshToken) {
         console.log('No OAuth parameters, showing home');
         return;
       }
@@ -115,6 +118,7 @@ const HomeWithOAuthHandler = () => {
           return;
         }
 
+        // Handle OAuth code flow
         if (code) {
           console.log('Exchanging code for session...');
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -127,14 +131,77 @@ const HomeWithOAuthHandler = () => {
 
           console.log('Session established:', data);
           
-          // Simple redirect to dashboard
-          setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 1000);
+          if (data?.session?.user) {
+            const user = data.session.user;
+            console.log('User authenticated:', user);
+
+            // Create user profile for OAuth users
+            try {
+              const { ensureStudentProfile } = await import('./utils/auth');
+              await ensureStudentProfile({
+                id: user.id,
+                email: user.email,
+                fullName: user.user_metadata?.full_name || 
+                         user.user_metadata?.name || 
+                         user.email?.split('@')[0] || 
+                         'Google User',
+              });
+              console.log('User profile created/verified');
+            } catch (profileError) {
+              console.warn('Profile creation warning:', profileError);
+              // Don't fail authentication if profile creation fails
+            }
+
+            // Get user role and redirect appropriately
+            try {
+              const { getAuthenticatedUserWithRole, getRedirectPathForRole } = await import('./utils/auth');
+              const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
+              const redirectPath = getRedirectPathForRole(role);
+              
+              console.log('User role:', role, 'Redirecting to:', redirectPath);
+              
+              // Redirect to appropriate dashboard
+              setTimeout(() => {
+                navigate(redirectPath, { replace: true });
+              }, 1000);
+            } catch (roleError) {
+              console.warn('Role detection warning:', roleError);
+              // Fallback to dashboard
+              setTimeout(() => {
+                navigate('/dashboard', { replace: true });
+              }, 1000);
+            }
+          } else {
+            throw new Error('No user session established');
+          }
+        }
+
+        // Handle direct token flow (if tokens are in URL)
+        if (accessToken && refreshToken) {
+          console.log('Setting session from tokens...');
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (sessionError) {
+            console.error('Session Error:', sessionError);
+            navigate('/login', { state: { error: sessionError.message } });
+            return;
+          }
+
+          console.log('Session set from tokens:', data);
+          
+          if (data?.user) {
+            // Similar profile creation and role detection logic
+            setTimeout(() => {
+              navigate('/dashboard', { replace: true });
+            }, 1000);
+          }
         }
       } catch (err) {
         console.error('OAuth Processing Error:', err);
-        navigate('/login', { state: { error: 'Authentication failed' } });
+        navigate('/login', { state: { error: err.message || 'Authentication failed' } });
       } finally {
         setIsProcessing(false);
       }
@@ -144,7 +211,7 @@ const HomeWithOAuthHandler = () => {
   }, [searchParams, navigate]);
 
   // Show loading if processing OAuth
-  if (isProcessing || searchParams.get('code') || searchParams.get('error')) {
+  if (isProcessing || searchParams.get('code') || searchParams.get('error') || searchParams.get('access_token') || searchParams.get('refresh_token')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
