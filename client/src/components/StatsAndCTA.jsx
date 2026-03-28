@@ -114,7 +114,7 @@ const StatsAndCTA = () => {
                                     <div className="absolute bottom-0 left-0 w-8 h-8 bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 rounded-tr-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100" />
                                     
                                     <div className="text-center flex flex-col items-center">
-                                        <div className={`relative w-16 h-16 ${stat.bgColor} rounded-2xl flex items-center justify-center mb-6 border-2 border-white/50 shadow-lg group-hover:scale-110 transition-all duration-500`}>
+                                        <div className={`relative w-16 h-16 ${stat.bgColor} rounded-2xl flex items-center justify-center mb-6 border-2 border-white shadow-xl group-hover:scale-110 transition-all duration-500`}>
                                             <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`} />
                                             <div className="relative z-10 text-white group-hover:text-white transition-colors duration-300">
                                                 {stat.icon}

@@ -12,7 +12,6 @@ import { getDisplayName, getFirstName, initializeStudentProfileForUser } from '.
 
 const Dashboard = () => {
     const [userData, setUserData] = useState(null);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [stats, setStats] = useState([
         { label: 'Total Notes', value: '0', icon: Folder, color: 'text-blue-600', bg: 'bg-blue-100', path: '/my-materials' },
         { label: 'Downloads', value: '0', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-100', path: '/placement-materials' },
@@ -162,24 +161,13 @@ const Dashboard = () => {
     const userFirstName = getFirstName(userData, 'Student');
 
     return (
-        <SidebarProvider>
-            <div className="min-h-screen bg-gray-50 flex">
-                {/* Sidebar */}
-                <Sidebar />
-
-                {/* Main Content */}
-                <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
-                    {/* Responsive Header */}
-                    <ResponsiveHeader 
-                        title={loading ? "Loading..." : `Welcome back, ${getFirstName(userData, 'Student')} 👋`}
-                        showSearch={true}
-                        showNotifications={true}
-                        showProfile={true}
-                    />
-
-                    {/* Dashboard Content */}
-                    <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-8 bg-gray-50/50">
-                        <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+        <Layout 
+            title={loading ? "Loading..." : `Welcome back, ${getFirstName(userData, 'Student')} 👋`}
+            showSearch={true}
+            showNotifications={true}
+            showProfile={true}
+        >
+            <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
                             {stats.map((stat, index) => (
@@ -315,10 +303,8 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-                </main>
-            </div>
-        </div>
-        </SidebarProvider>
+                </div>
+        </Layout>
     );
 };
 

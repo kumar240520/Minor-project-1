@@ -91,8 +91,8 @@ const Navbar = () => {
     return (
         <nav
             className={`fixed w-full z-50 transition-all duration-300 ${isScrolled
-                ? 'bg-white/90 backdrop-blur-lg shadow-lg border-b border-[#59C1A5]/30 py-4'
-                : 'bg-gradient-to-r from-[#0B0E27]/90 via-[#0B0E27]/80 to-[#0B0E27]/95 backdrop-blur-lg border-b border-[#59C1A5]/20 py-6'
+                ? 'bg-white shadow-xl border-b border-violet-100 py-3 lg:py-4'
+                : 'bg-[#0B0E27]/98 lg:bg-[#0B0E27]/90 backdrop-blur-xl border-b border-white/10 py-5 lg:py-6'
                 }`}
         >
             {/* Decorative border accents */}
@@ -212,9 +212,12 @@ const Navbar = () => {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed top-0 right-0 bottom-0 w-[280px] bg-[#0B0E27] border-l border-white/10 z-40 md:hidden p-6 pt-24 shadow-2xl"
+                            className="fixed top-0 right-0 bottom-0 w-[85%] max-w-[400px] bg-[#0F172A] z-40 md:hidden p-8 pt-24 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col border-l border-white/5"
                         >
-                            <div className="flex flex-col space-y-4">
+                            {/* Decorative background element */}
+                            <div className="absolute top-0 right-0 w-full h-1/2 bg-gradient-to-b from-violet-600/10 to-transparent pointer-events-none" />
+
+                            <div className="flex flex-col space-y-6 relative z-10">
                                 {navLinks.map((link) => (
                                     <ScrollLink
                                         key={link.name}
@@ -222,26 +225,29 @@ const Navbar = () => {
                                         smooth={true}
                                         duration={500}
                                         onClick={toggleSidebar}
-                                        className="text-lg font-semibold text-white/90 hover:text-[#86EFAC] p-4 rounded-xl hover:bg-white/5 transition-all"
+                                        className="text-xl font-bold text-white hover:text-[#86EFAC] transition-colors flex items-center group"
                                     >
+                                        <div className="w-2 h-2 bg-violet-600 rounded-full mr-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {link.name}
                                     </ScrollLink>
                                 ))}
-                                <div className="pt-6 border-t border-white/10 flex flex-col space-y-4">
+                                
+                                <div className="pt-10 border-t border-white/10 flex flex-col space-y-5">
+                                    <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Member Access</div>
                                     {loading ? (
-                                        <div className="h-12 w-full bg-white/10 animate-pulse rounded-xl" />
+                                        <div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />
                                     ) : session ? (
                                         <>
                                             <RouterLink
                                                 to={dashboardPath}
                                                 onClick={toggleSidebar}
-                                                className="w-full py-4 rounded-xl bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-bold text-center shadow-lg"
+                                                className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black text-center shadow-lg shadow-violet-900/20 active:scale-95 transition-transform"
                                             >
-                                                {role === 'admin' ? 'Admin Panel' : 'Dashboard'}
+                                                {role === 'admin' ? 'Admin Panel' : 'Go to Dashboard'}
                                             </RouterLink>
                                             <button
                                                 onClick={() => { handleLogout(); toggleSidebar(); }}
-                                                className="w-full py-4 rounded-xl bg-white/5 text-red-400 font-bold text-center border border-white/10"
+                                                className="w-full py-4 rounded-2xl bg-white/5 text-red-400 font-black text-center border border-white/10 active:scale-95 transition-transform"
                                             >
                                                 Log Out
                                             </button>
@@ -251,20 +257,31 @@ const Navbar = () => {
                                             <RouterLink
                                                 to="/login"
                                                 onClick={toggleSidebar}
-                                                className="w-full py-4 rounded-xl bg-white/5 text-white font-bold text-center border border-white/10"
+                                                className="w-full py-4 rounded-2xl bg-white/5 text-white font-black text-center border border-white/10 active:scale-95 transition-transform"
                                             >
-                                                Log In
+                                                Sign In
                                             </RouterLink>
                                             <RouterLink
                                                 to="/register"
                                                 onClick={toggleSidebar}
-                                                className="w-full py-4 rounded-xl bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-bold text-center shadow-lg"
+                                                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-black text-center shadow-lg active:scale-95 transition-transform"
                                             >
-                                                Sign Up
+                                                Get Started
                                             </RouterLink>
                                         </>
                                     )}
                                 </div>
+                            </div>
+
+                            {/* Mobile drawer footer */}
+                            <div className="mt-auto pt-8 flex items-center justify-between text-gray-500 text-sm">
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-8 h-8 bg-violet-600/20 rounded-lg flex items-center justify-center">
+                                        <BookOpen className="w-4 h-4 text-violet-400" />
+                                    </div>
+                                    <span className="font-bold text-gray-400">EduSure</span>
+                                </div>
+                                <span className="text-[10px] uppercase font-bold tracking-tighter">&copy; 2026</span>
                             </div>
                         </motion.div>
                     </>

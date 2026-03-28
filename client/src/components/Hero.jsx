@@ -96,31 +96,31 @@ const Hero = () => {
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.4, duration: 0.5 }}
-                                className="text-center p-4 bg-white/10 backdrop-blur-md rounded-xl border border-[#60A5FA]/20"
+                                className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
-                                <Users className="w-6 h-6 text-[#60A5FA] mx-auto mb-2" />
-                                <div className="text-2xl font-bold text-white">10K+</div>
-                                <div className="text-sm text-white/70">Students</div>
+                                <Users className="w-6 h-6 text-violet-600 mx-auto mb-2" />
+                                <div className="text-2xl font-black text-gray-900">10K+</div>
+                                <div className="text-sm font-bold text-gray-500 uppercase tracking-tighter">Students</div>
                             </motion.div>
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.5, duration: 0.5 }}
-                                className="text-center p-4 bg-white/10 backdrop-blur-md rounded-xl border border-[#60A5FA]/20"
+                                className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
-                                <BookOpen className="w-6 h-6 text-[#86EFAC] mx-auto mb-2" />
-                                <div className="text-2xl font-bold text-white">5K+</div>
-                                <div className="text-sm text-white/70">Resources</div>
+                                <BookOpen className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                                <div className="text-2xl font-black text-gray-900">5K+</div>
+                                <div className="text-sm font-bold text-gray-500 uppercase tracking-tighter">Resources</div>
                             </motion.div>
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.6, duration: 0.5 }}
-                                className="text-center p-4 bg-white/10 backdrop-blur-md rounded-xl border border-[#60A5FA]/20"
+                                className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
-                                <Zap className="w-6 h-6 text-[#60A5FA] mx-auto mb-2" />
-                                <div className="text-2xl font-bold text-white">24/7</div>
-                                <div className="text-sm text-white/70">Access</div>
+                                <Zap className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                                <div className="text-2xl font-black text-gray-900">24/7</div>
+                                <div className="text-sm font-bold text-gray-500 uppercase tracking-tighter">Access</div>
                             </motion.div>
                         </div>
 

@@ -2,8 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Bell, Filter, Search, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import ResponsiveHeader from '../components/ResponsiveHeader';
+import Layout from '../components/Layout';
 import MaterialCard from '../components/materials/MaterialCard';
 import MaterialPreviewModal from '../components/materials/MaterialPreviewModal';
 import useMaterialPreview from '../hooks/useMaterialPreview';
@@ -80,19 +79,14 @@ const PYQ = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
-          <ResponsiveHeader 
-            title="PYQs Collection"
-            showSearch={true}
-            showNotifications={true}
-            showProfile={true}
-            onSearch={setSearchTerm}
-          />
-
-          <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50/50">
-          <div className="max-w-7xl mx-auto space-y-8">
+    <Layout 
+      title="PYQs Collection"
+      showSearch={true}
+      showNotifications={true}
+      showProfile={true}
+      onSearch={setSearchTerm}
+    >
+      <div className="max-w-7xl mx-auto space-y-8">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="flex space-x-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
                 <button className="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-medium shadow-sm whitespace-nowrap">
@@ -154,8 +148,6 @@ const PYQ = () => {
               )}
             </div>
           </div>
-        </main>
-      </div>
 
       <MaterialPreviewModal
         isOpen={isPreviewOpen}
@@ -166,7 +158,7 @@ const PYQ = () => {
         onDownload={handleDownload}
         isDownloading={activeDownloadId === previewMaterial?.id}
       />
-    </div>
+    </Layout>
   );
 };
 
