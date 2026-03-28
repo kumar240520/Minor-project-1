@@ -19,8 +19,7 @@ const getAuthRedirectUrl = () => {
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     auth: {
         detectSessionInUrl: true,
-        flowType: 'pkce',
-        redirectTo: getAuthRedirectUrl()
+        flowType: 'pkce'
     }
 });
 

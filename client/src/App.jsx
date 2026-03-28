@@ -94,19 +94,27 @@ const HomeWithOAuthHandler = () => {
     const code = searchParams.get('code');
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
 
-    // If we have OAuth parameters in the root URL, redirect to auth callback
-    if (code || error) {
+    // Debug logging
+    console.log('OAuth Handler Debug:', {
+      code,
+      error,
+      errorDescription,
+      accessToken,
+      refreshToken,
+      allParams: Object.fromEntries(searchParams.entries())
+    });
+
+    // If we have any OAuth parameters in the root URL, redirect to auth callback
+    if (code || error || accessToken || refreshToken) {
+      console.log('Redirecting to auth callback with OAuth parameters');
       const params = new URLSearchParams();
-      if (code) params.set('code', code);
-      if (error) params.set('error', error);
-      if (errorDescription) params.set('error_description', errorDescription);
       
-      // Preserve other parameters that might be needed
+      // Preserve all OAuth parameters
       searchParams.forEach((value, key) => {
-        if (key !== 'code' && key !== 'error' && key !== 'error_description') {
-          params.set(key, value);
-        }
+        params.set(key, value);
       });
 
       window.location.href = `/auth/callback?${params.toString()}`;
@@ -116,8 +124,10 @@ const HomeWithOAuthHandler = () => {
   // Show loading while checking for OAuth params
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const accessToken = searchParams.get('access_token');
+  const refreshToken = searchParams.get('refresh_token');
   
-  if (code || error) {
+  if (code || error || accessToken || refreshToken) {
     return <RouteLoader />;
   }
 

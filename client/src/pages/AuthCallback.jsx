@@ -20,6 +20,16 @@ const AuthCallback = () => {
             const error = searchParams.get('error');
             const provider = searchParams.get('provider'); // This will be 'google' for Google OAuth
 
+            // Debug logging
+            console.log('AuthCallback Debug:', {
+                accessToken,
+                refreshToken,
+                code,
+                error,
+                provider,
+                allParams: Object.fromEntries(searchParams.entries())
+            });
+
             if (error) {
                 setStatus('error');
                 setMessage(`Authentication failed: ${error}`);
