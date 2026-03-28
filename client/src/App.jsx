@@ -1,5 +1,6 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Navigate, Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
+import { supabase } from './supabaseClient';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -89,46 +90,183 @@ const RouteLoader = () => (
 const HomeWithOAuthHandler = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const code = searchParams.get('code');
-    const error = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
+    const processOAuthTokens = async () => {
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+      const code = searchParams.get('code');
+      const error = searchParams.get('error');
 
-    // Debug logging
-    console.log('OAuth Handler Debug:', {
-      code,
-      error,
-      errorDescription,
-      accessToken,
-      refreshToken,
-      allParams: Object.fromEntries(searchParams.entries())
-    });
-
-    // If we have any OAuth parameters in the root URL, redirect to auth callback
-    if (code || error || accessToken || refreshToken) {
-      console.log('Redirecting to auth callback with OAuth parameters');
-      const params = new URLSearchParams();
-      
-      // Preserve all OAuth parameters
-      searchParams.forEach((value, key) => {
-        params.set(key, value);
+      // Debug logging
+      console.log('OAuth Handler Debug:', {
+        accessToken,
+        refreshToken,
+        code,
+        error,
+        allParams: Object.fromEntries(searchParams.entries())
       });
 
-      window.location.href = `/auth/callback?${params.toString()}`;
-    }
-  }, [location, searchParams]);
+      // Only process if we have OAuth parameters
+      if (!accessToken && !refreshToken && !code && !error) {
+        return; // No OAuth parameters, show normal home page
+      }
 
-  // Show loading while checking for OAuth params
-  const code = searchParams.get('code');
-  const error = searchParams.get('error');
-  const accessToken = searchParams.get('access_token');
-  const refreshToken = searchParams.get('refresh_token');
-  
-  if (code || error || accessToken || refreshToken) {
-    return <RouteLoader />;
+      setIsProcessingOAuth(true);
+
+      try {
+        if (error) {
+          console.error('OAuth Error:', error);
+          // Handle OAuth error - redirect to login with error
+          navigate('/login', { 
+            state: { 
+              error: `Authentication failed: ${error}` 
+            } 
+          });
+          return;
+        }
+
+        // Handle OAuth code flow
+        if (code && !accessToken) {
+          console.log('Processing OAuth code...');
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            console.error('Code exchange error:', exchangeError);
+            navigate('/login', { 
+              state: { 
+                error: exchangeError.message || 'Failed to complete authentication' 
+              } 
+            });
+            return;
+          }
+
+          if (data?.session?.user) {
+            console.log('Successfully exchanged code for session');
+            // Create user profile if needed
+            try {
+              const { ensureStudentProfile } = await import('./utils/auth');
+              await ensureStudentProfile({
+                id: data.session.user.id,
+                email: data.session.user.email,
+                fullName: data.session.user.user_metadata?.full_name || 
+                         data.session.user.user_metadata?.name || 
+                         data.session.user.email?.split('@')[0] || 
+                         'Google User',
+              });
+            } catch (profileError) {
+              console.warn('Profile creation warning:', profileError);
+            }
+
+            // Get user role and redirect
+            try {
+              const { getAuthenticatedUserWithRole, getRedirectPathForRole } = await import('./utils/auth');
+              const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
+              const redirectPath = getRedirectPathForRole(role);
+              
+              console.log('Redirecting to:', redirectPath);
+              navigate(redirectPath, { replace: true });
+            } catch (roleError) {
+              console.warn('Role detection warning:', roleError);
+              navigate('/dashboard', { replace: true });
+            }
+          }
+          return;
+        }
+
+        // Handle direct token flow
+        if (accessToken && refreshToken) {
+          console.log('Processing OAuth tokens...');
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (sessionError) {
+            console.error('Session setting error:', sessionError);
+            navigate('/login', { 
+              state: { 
+                error: sessionError.message || 'Failed to set session' 
+              } 
+            });
+            return;
+          }
+
+          if (data?.user) {
+            console.log('Successfully set session');
+            // Create user profile if needed
+            try {
+              const { ensureStudentProfile } = await import('./utils/auth');
+              await ensureStudentProfile({
+                id: data.user.id,
+                email: data.user.email,
+                fullName: data.user.user_metadata?.full_name || 
+                         data.user.user_metadata?.name || 
+                         data.user.email?.split('@')[0] || 
+                         'Google User',
+              });
+            } catch (profileError) {
+              console.warn('Profile creation warning:', profileError);
+            }
+
+            // Get user role and redirect
+            try {
+              const { getAuthenticatedUserWithRole, getRedirectPathForRole } = await import('./utils/auth');
+              const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
+              const redirectPath = getRedirectPathForRole(role);
+              
+              console.log('Redirecting to:', redirectPath);
+              navigate(redirectPath, { replace: true });
+            } catch (roleError) {
+              console.warn('Role detection warning:', roleError);
+              navigate('/dashboard', { replace: true });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('OAuth processing error:', error);
+        navigate('/login', { 
+          state: { 
+            error: error.message || 'Authentication processing failed' 
+          } 
+        });
+      } finally {
+        setIsProcessingOAuth(false);
+      }
+    };
+
+    processOAuthTokens();
+  }, [location, searchParams, navigate]);
+
+  // Show loading while processing OAuth
+  if (isProcessingOAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Completing authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if we have OAuth parameters (show loading instead of home page)
+  const hasOAuthParams = searchParams.get('access_token') || 
+                        searchParams.get('refresh_token') || 
+                        searchParams.get('code') || 
+                        searchParams.get('error');
+
+  if (hasOAuthParams) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Processing authentication...</p>
+        </div>
+      </div>
+    );
   }
 
   // Otherwise show the regular home page
