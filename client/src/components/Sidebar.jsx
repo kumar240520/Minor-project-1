@@ -38,6 +38,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   const handleLogout = async () => {
+    // Sign out from Supabase
     await supabase.auth.signOut();
   };
 

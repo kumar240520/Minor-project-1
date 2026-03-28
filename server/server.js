@@ -9,48 +9,48 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// trust proxy - needed for express-rate-limit if behind a proxy (like Vercel, Heroku, etc)
+app.set('trust proxy', 1);
+
+// Global request logger for debugging
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Basic Route
-app.get('/', (req, res) => {
-    res.json({ message: 'EduSure Backend API is running!' });
-});
-
 // Health Check Endpoint
-app.get('/health', async (req, res) => {
-    try {
-        const db = require('./config/db');
-        const client = await db.getClient();
-        await client.query('SELECT 1 as test');
-        client.release();
-        res.json({ 
-            status: 'healthy', 
-            database: 'connected',
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({ 
-            status: 'unhealthy', 
-            database: 'disconnected',
-            error: error.message 
-        });
-    }
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'UP', 
+        time: new Date().toISOString(),
+        env: process.env.NODE_ENV 
+    });
 });
 
-// Import Routes (To be created)
-const rewardRoutes = require('./routes/rewardRoutes');
-if (process.env.ENABLE_LEGACY_REWARDS_API === 'true') {
-    app.use('/api/rewards', rewardRoutes);
-}
+// Import Routes
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 
-// Error Handling Middleware
+// Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: err.message || 'Something went wrong on the server!' });
+    console.error('SERVER ERROR:', err);
+    res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
 });
 
+// Process-wide handlers to catch silent crashes
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
+// Start server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
 });
