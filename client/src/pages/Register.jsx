@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, Lock, User, UserPlus, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { ensureStudentProfile, isRowLevelSecurityError } from '../utils/auth';
+import { ensureStudentProfile, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
 
 const Register = () => {
     const [name, setName] = useState('');
@@ -41,6 +41,11 @@ const handleGoogleSignUp = async () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        
+        if (!isValidInstitutionalEmail(email)) {
+             setError('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed.');
+             return;
+        }
         
         const { data, error: signUpError } = await supabase.auth.signUp({
             email,
@@ -194,7 +199,7 @@ const handleGoogleSignUp = async () => {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                        placeholder="student@college.edu"
+                                        placeholder="0808...ies@ipsacademy.org"
                                     />
                                 </div>
                             </div>

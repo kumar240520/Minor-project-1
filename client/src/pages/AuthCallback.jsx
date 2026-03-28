@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { getAuthenticatedUserWithRole, getRedirectPathForRole } from '../utils/auth';
+import { getAuthenticatedUserWithRole, getRedirectPathForRole, isValidInstitutionalEmail } from '../utils/auth';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
@@ -30,6 +30,10 @@ const AuthCallback = () => {
                 if (error) throw error;
                 
                 if (session) {
+                    if (!isValidInstitutionalEmail(session.user.email)) {
+                        await supabase.auth.signOut();
+                        throw new Error('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed');
+                    }
                     const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
                     if (mounted) navigate(getRedirectPathForRole(role), { replace: true });
                 } else {
@@ -38,6 +42,10 @@ const AuthCallback = () => {
                         if (event === 'SIGNED_IN' && currentSession) {
                             subscription.unsubscribe();
                             try {
+                                if (!isValidInstitutionalEmail(currentSession.user.email)) {
+                                    await supabase.auth.signOut();
+                                    throw new Error('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed');
+                                }
                                 const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
                                 if (mounted) navigate(getRedirectPathForRole(role), { replace: true });
                             } catch (err) {

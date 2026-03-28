@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Mail, Lock, LogIn, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError } from '../utils/auth';
+import { getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -46,6 +46,12 @@ const handleGoogleSignIn = async () => {
         setError(null);
         setSuccessMsg(null);
         setIsSubmitting(true);
+
+        if (!isValidInstitutionalEmail(email)) {
+             setIsSubmitting(false);
+             setError('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed.');
+             return;
+        }
 
         let didAuthenticate = false;
 
@@ -172,7 +178,7 @@ const handleGoogleSignIn = async () => {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                        placeholder="student@college.edu"
+                                        placeholder="0808...ies@ipsacademy.org"
                                     />
                                 </div>
                             </div>

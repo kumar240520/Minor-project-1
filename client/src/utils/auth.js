@@ -67,6 +67,13 @@ export class InvalidUserRoleError extends Error {
 export const getRedirectPathForRole = (role) =>
   role === 'admin' ? '/admin-dashboard' : '/dashboard';
 
+export const isValidInstitutionalEmail = (email) => {
+  if (!email) return false;
+  const lowerEmail = email.toLowerCase().trim();
+  // Specifically enforcing start with 0808 and end with .ies@ipsacademy.org
+  return lowerEmail.startsWith('0808') && lowerEmail.endsWith('.ies@ipsacademy.org');
+};
+
 export const getAuthenticatedUser = async () => {
   const {
     data: { user },
