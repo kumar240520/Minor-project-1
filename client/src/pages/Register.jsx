@@ -32,7 +32,10 @@ const handleGoogleSignUp = async () => {
 
         try {
             const { data, error: googleError } = await supabase.auth.signInWithOAuth({
-                provider: 'google'
+                provider: 'google',
+                options: {
+                    redirectTo: getRedirectUrl()
+                }
             });
 
             if (googleError) {

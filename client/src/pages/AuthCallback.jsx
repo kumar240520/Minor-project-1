@@ -5,8 +5,8 @@ const AuthCallback = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Redirect to home page - OAuth is handled there
-        navigate('/', { replace: true });
+        // Redirect to home page with search params - OAuth is handled there
+        navigate('/' + window.location.search, { replace: true });
     }, [navigate]);
 
     return (
