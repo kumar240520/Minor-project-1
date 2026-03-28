@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Bell, Settings as SettingsIcon, User, Lock, Shield, CreditCard, BellRing, HelpCircle, Award } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -123,10 +124,10 @@ const Settings = () => {
                                     </button>
                                 ))}
                                 <div className="my-2 border-t border-gray-100" />
-                                <a href="/support" className="w-full flex items-center px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium">
+                                <Link to="/help" className="w-full flex items-center px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium">
                                     <HelpCircle className="h-5 w-5 mr-3 text-gray-400" />
                                     Support & Help
-                                </a>
+                                </Link>
                                 <button onClick={handleDeleteAccount} className="w-full flex items-center px-4 py-3 rounded-xl transition-all text-red-600 hover:bg-red-50 font-medium">
                                     <Shield className="h-5 w-5 mr-3 text-red-400" />
                                     Delete Account

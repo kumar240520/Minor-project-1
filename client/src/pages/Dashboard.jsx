@@ -4,8 +4,7 @@ import {
     Search, Bell, Calendar, Award,
     TrendingUp, FileText, CheckCircle, Clock, Folder
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import ResponsiveHeader from '../components/ResponsiveHeader';
+import Layout from '../components/Layout';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { formatDistanceToNow } from 'date-fns';

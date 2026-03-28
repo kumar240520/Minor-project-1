@@ -323,7 +323,7 @@ const ResponsiveHeader = ({
         )}
 
         {showProfile && (
-          <Link to="/settings" className="h-8 w-8 lg:h-10 lg:w-10 rounded-full border-2 border-violet-200 overflow-hidden cursor-pointer shadow-sm hover:border-violet-500 transition-colors block">
+          <Link to="/profile" className="h-8 w-8 lg:h-10 lg:w-10 rounded-full border-2 border-violet-200 overflow-hidden cursor-pointer shadow-sm hover:border-violet-500 transition-colors block">
             <img 
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userId || "default"}`} 
               alt="Profile" 

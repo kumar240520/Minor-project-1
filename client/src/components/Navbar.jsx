@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 import { Menu, X, BookOpen, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { fetchUserProfile, getRedirectPathForRole } from '../utils/auth';
 import { useSidebar } from './Sidebar';
@@ -184,7 +185,7 @@ const Navbar = () => {
                     {/* Enhanced Mobile Menu Button */}
                     <button
                         onClick={toggleSidebar}
-                        className={`md:hidden p-2 rounded-lg transition-all ${
+                        className={`md:hidden p-2 rounded-lg transition-all z-50 ${
                             isScrolled
                                 ? 'text-gray-600 hover:text-[#60A5FA] hover:bg-[#60A5FA]/10 border border-gray-200 hover:border-[#60A5FA]/30'
                                 : 'text-white hover:text-[#86EFAC] hover:bg-white/10 border border-white/30 hover:border-[#60A5FA]/30'
@@ -194,6 +195,81 @@ const Navbar = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Mobile Navigation Overlay */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={toggleSidebar}
+                            className="fixed inset-0 bg-[#0B0E27]/80 backdrop-blur-md z-40 md:hidden"
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 bottom-0 w-[280px] bg-[#0B0E27] border-l border-white/10 z-40 md:hidden p-6 pt-24 shadow-2xl"
+                        >
+                            <div className="flex flex-col space-y-4">
+                                {navLinks.map((link) => (
+                                    <ScrollLink
+                                        key={link.name}
+                                        to={link.to}
+                                        smooth={true}
+                                        duration={500}
+                                        onClick={toggleSidebar}
+                                        className="text-lg font-semibold text-white/90 hover:text-[#86EFAC] p-4 rounded-xl hover:bg-white/5 transition-all"
+                                    >
+                                        {link.name}
+                                    </ScrollLink>
+                                ))}
+                                <div className="pt-6 border-t border-white/10 flex flex-col space-y-4">
+                                    {loading ? (
+                                        <div className="h-12 w-full bg-white/10 animate-pulse rounded-xl" />
+                                    ) : session ? (
+                                        <>
+                                            <RouterLink
+                                                to={dashboardPath}
+                                                onClick={toggleSidebar}
+                                                className="w-full py-4 rounded-xl bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-bold text-center shadow-lg"
+                                            >
+                                                {role === 'admin' ? 'Admin Panel' : 'Dashboard'}
+                                            </RouterLink>
+                                            <button
+                                                onClick={() => { handleLogout(); toggleSidebar(); }}
+                                                className="w-full py-4 rounded-xl bg-white/5 text-red-400 font-bold text-center border border-white/10"
+                                            >
+                                                Log Out
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RouterLink
+                                                to="/login"
+                                                onClick={toggleSidebar}
+                                                className="w-full py-4 rounded-xl bg-white/5 text-white font-bold text-center border border-white/10"
+                                            >
+                                                Log In
+                                            </RouterLink>
+                                            <RouterLink
+                                                to="/register"
+                                                onClick={toggleSidebar}
+                                                className="w-full py-4 rounded-xl bg-gradient-to-r from-[#60A5FA] to-[#86EFAC] text-white font-bold text-center shadow-lg"
+                                            >
+                                                Sign Up
+                                            </RouterLink>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </nav>
     );
 };

@@ -10,6 +10,7 @@ import StatsAndCTA from './components/StatsAndCTA';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminGuard from './components/admin/AdminGuard';
+import { SidebarProvider } from './components/Sidebar';
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
@@ -42,7 +43,7 @@ const AdminTickets = lazy(() => import('./pages/admin/AdminTickets'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 
 const Home = () => (
-  <>
+  <SidebarProvider>
     <Navbar />
     <Hero />
     <Features />
@@ -50,7 +51,7 @@ const Home = () => (
     <Events />
     <StatsAndCTA />
     <Footer />
-  </>
+  </SidebarProvider>
 );
 
 const RouteLoader = () => (
