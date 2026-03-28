@@ -1,13 +1,17 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         // Redirect to home page with search params - OAuth is handled there
-        navigate('/' + window.location.search, { replace: true });
-    }, [navigate]);
+        navigate({
+            pathname: '/',
+            search: location.search
+        }, { replace: true });
+    }, [navigate, location.search]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
