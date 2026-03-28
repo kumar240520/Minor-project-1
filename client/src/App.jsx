@@ -12,6 +12,8 @@ import AdminGuard from './components/admin/AdminGuard';
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
+const EmailVerification = lazy(() => import('./pages/EmailVerification'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PYQ = lazy(() => import('./pages/PYQ'));
 const PlacementMaterials = lazy(() => import('./pages/PlacementMaterials'));
@@ -91,6 +93,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/email-verification" element={<EmailVerification />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/pyqs" element={<ProtectedRoute><PYQ /></ProtectedRoute>} />

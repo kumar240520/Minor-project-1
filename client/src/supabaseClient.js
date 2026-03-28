@@ -5,7 +5,13 @@ export const SUPABASE_URL =
 export const SUPABASE_PUBLIC_KEY =
     import.meta.env.VITE_SUPABASE_PUBLIC_KEY || 'sb_publishable_riQhamrU4Pwjay2fdMMkmw_ymryt0zi';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
+    auth: {
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+        redirectTo: window.location.origin + '/email-verification'
+    }
+});
 
 export const createAuthenticatedSupabaseClient = (accessToken) =>
     createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {

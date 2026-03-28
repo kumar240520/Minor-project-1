@@ -10,7 +10,31 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const navigate = useNavigate();
+
+    const handleGoogleSignUp = async () => {
+        setError(null);
+        setIsGoogleLoading(true);
+
+        try {
+            const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`
+                }
+            });
+
+            if (googleError) {
+                throw googleError;
+            }
+
+            // The OAuth flow will redirect automatically, so we don't need to handle navigation here
+        } catch (error) {
+            setError(error.message || 'Failed to sign up with Google. Please try again.');
+            setIsGoogleLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -211,9 +235,13 @@ const Register = () => {
                         </div>
 
                         <div className="mt-6">
-                            <button className="w-full flex justify-center items-center py-3 px-4 border-2 border-gray-100 rounded-xl shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                            <button 
+                                onClick={handleGoogleSignUp}
+                                disabled={isGoogleLoading}
+                                className="w-full flex justify-center items-center py-3 px-4 border-2 border-gray-100 rounded-xl shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
                                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5 mr-2" />
-                                Google
+                                {isGoogleLoading ? 'Signing up with Google...' : 'Google'}
                             </button>
                         </div>
 
