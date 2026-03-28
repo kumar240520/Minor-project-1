@@ -6,6 +6,7 @@ import { supabase } from '../supabaseClient';
 import { getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
 import { useOTP } from '../hooks/useOTP';
 import OTPInput from '../components/OTPInput';
+import { generateOTPCode, sendOTPCode, verifyOTPCode } from '../utils/otpService';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -57,22 +58,59 @@ const Login = () => {
         }
 
         try {
-            const { error: otpError } = await supabase.auth.signInWithOtp({
-                email: email,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback`
-                }
+            // Use real backend API for OTP sending
+            // Use VITE_API_BASE_URL if it exists in client/.env
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${apiBase}/auth/send-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                }),
             });
 
-            if (otpError) {
-                throw otpError;
+            if (!response.ok) {
+                const errorData = await response.json();
+                
+                // Handle rate limiting specifically
+                if (response.status === 429) {
+                    throw new Error(errorData.message || 'Too many requests. Please wait before trying again.');
+                }
+                
+                throw new Error(errorData.message || 'Failed to send OTP');
             }
 
-            setSuccessMsg('OTP sent successfully! Please check your email.');
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to send OTP');
+            }
+
+            // Handle development mode where OTP is returned
+            if (data.development && data.otp) {
+                setSuccessMsg(`OTP generated for development: ${data.otp}`);
+                console.log('🔢 Development OTP:', data.otp);
+            } else {
+                setSuccessMsg('OTP sent successfully! Please check your email.');
+            }
+            
             setCurrentStep('otp');
             startTimer();
         } catch (err) {
-            setError(err.message || 'Failed to send OTP. Please try again.');
+            console.error('Send OTP Error:', err);
+            
+            // Provide more user-friendly error messages
+            let errorMessage = err.message || 'Failed to send OTP. Please try again.';
+            
+            if (errorMessage.includes('Too many OTP requests')) {
+                errorMessage = 'Too many OTP requests. Please wait 10 minutes before trying again.';
+            } else if (errorMessage.includes('Too many requests')) {
+                errorMessage = 'Please wait a moment before requesting another OTP.';
+            }
+            
+            setError(errorMessage);
         } finally {
             setIsSendingOTP(false);
         }
@@ -92,27 +130,85 @@ const Login = () => {
         }
 
         try {
-            const { data, error: verifyError } = await supabase.auth.verifyOtp({
-                email: email,
-                token: getOtpString(),
-                type: 'email'
+            const enteredOTP = getOtpString();
+            
+            // Use real backend API for OTP verification
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${apiBase}/auth/verify-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    otp: enteredOTP,
+                }),
             });
 
-            if (verifyError) {
-                throw verifyError;
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Invalid OTP');
             }
 
-            setSuccessMsg('OTP verified! Now enter your password to complete login.');
-            setIsOTPVerified(true);
-            setCurrentStep('password');
-        } catch (err) {
-            if (err.message?.includes('Invalid OTP') || err.message?.includes('expired')) {
-                setError('Invalid or expired OTP. Please request a new one.');
-                clearOtp();
-                allowResend();
-            } else {
-                setError(err.message || 'Failed to verify OTP. Please try again.');
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Invalid OTP');
             }
+
+            setSuccessMsg('OTP verified! Creating session...');
+            
+            // Create real Supabase session
+            if (data.user && data.session) {
+                // The backend has verified the OTP and returned a valid Supabase session
+                // We need to set this session in the client-side Supabase client
+                try {
+                    // Set the session in the Supabase client
+                    await supabase.auth.setSession({
+                        access_token: data.session.access_token,
+                        refresh_token: data.session.refresh_token
+                    });
+                    
+                    // Get user role and redirect
+                    const { role, profile } = await getAuthenticatedUserWithRole({ initializeStudentProfile: false });
+                    const redirectPath = getRedirectPathForRole(role);
+                    
+                    // Only create profile if it doesn't exist and preserve existing name
+                    if (!profile) {
+                        console.log("Profile not found, creating new one...");
+                        try {
+                            // Get the user's real name from auth metadata
+                            const userName = data.user.user_metadata?.full_name || 
+                                           data.user.user_metadata?.name || 
+                                           null; // Keep null if no name found, don't use email fallback
+                            
+                            await ensureStudentProfile({
+                                id: data.user.id,
+                                email: data.user.email,
+                                fullName: userName
+                            });
+                        } catch (profileError) {
+                            console.error('Profile creation error:', profileError);
+                            // Don't fail login if profile creation fails
+                        }
+                    } else {
+                        console.log("Existing profile found with name:", profile.name);
+                    }
+                    
+                    setTimeout(() => {
+                        navigate(redirectPath, { replace: true });
+                    }, 1000);
+                } catch (sessionError) {
+                    console.error('Session setup error:', sessionError);
+                    throw new Error('Failed to create session. Please try again.');
+                }
+            } else {
+                throw new Error('User or session data not found');
+            }
+        } catch (err) {
+            console.error('Verify OTP Error:', err);
+            setError(err.message || 'Failed to verify OTP. Please try again.');
+            clearOtp();
         } finally {
             setIsVerifyingOTP(false);
         }
@@ -125,20 +221,51 @@ const Login = () => {
         setIsSendingOTP(true);
 
         try {
-            const { error: resendError } = await supabase.auth.resend({
-                type: 'signup',
-                email: email,
+            // Use real backend API for OTP resend
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${apiBase}/auth/send-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                }),
             });
 
-            if (resendError) {
-                throw resendError;
+            if (!response.ok) {
+                const errorData = await response.json();
+                
+                // Handle rate limiting specifically
+                if (response.status === 429) {
+                    throw new Error(errorData.message || 'Too many requests. Please wait before trying again.');
+                }
+                
+                throw new Error(errorData.message || 'Failed to resend OTP');
+            }
+
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to resend OTP');
             }
 
             setSuccessMsg('OTP resent successfully! Please check your email.');
             clearOtp();
             startTimer();
         } catch (err) {
-            setError(err.message || 'Failed to resend OTP. Please try again.');
+            console.error('Resend OTP Error:', err);
+            
+            // Provide more user-friendly error messages
+            let errorMessage = err.message || 'Failed to resend OTP. Please try again.';
+            
+            if (errorMessage.includes('Too many OTP requests')) {
+                errorMessage = 'Too many OTP requests. Please wait 10 minutes before trying again.';
+            } else if (errorMessage.includes('Too many requests')) {
+                errorMessage = 'Please wait a moment before requesting another OTP.';
+            }
+            
+            setError(errorMessage);
         } finally {
             setIsSendingOTP(false);
         }
@@ -209,9 +336,11 @@ const Login = () => {
              return;
         }
 
-        // For OTP login, check if OTP is verified first
-        if (loginMethod === 'otp' && !isOTPVerified) {
-            setError('Please verify your email with OTP first.');
+        // For OTP login, user should already be logged in after OTP verification
+        if (loginMethod === 'otp' && isOTPVerified) {
+            // User should already be redirected after OTP verification
+            // This submit handler shouldn't be called for OTP login
+            navigate('/dashboard', { replace: true });
             setIsSubmitting(false);
             return;
         }
@@ -235,10 +364,18 @@ const Login = () => {
             // If profile doesn't exist, create one without requiring name
             if (!profile) {
                 try {
+                    // Get the authenticated user to access metadata
+                    const authUser = await getAuthenticatedUser();
+                    
+                    // Get the user's real name from auth metadata
+                    const userName = authUser.user_metadata?.full_name || 
+                                   authUser.user_metadata?.name || 
+                                   null; // Keep null if no name found
+                    
                     await ensureStudentProfile({
-                        id: (await getAuthenticatedUser()).id,
+                        id: authUser.id,
                         email,
-                        fullName: null, // Let it use email fallback for now
+                        fullName: userName,
                     });
                 } catch (profileError) {
                     console.error('Profile creation error during login:', profileError);

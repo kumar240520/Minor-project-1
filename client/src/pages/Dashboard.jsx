@@ -48,11 +48,12 @@ const Dashboard = () => {
                     console.log("Profile not found, creating one...");
                     try {
                         // Create user profile if it doesn't exist
-                        profileData = await initializeStudentProfileForUser(user);
-                        console.log("Profile created successfully");
-                    } catch (createError) {
-                        console.error("Error creating profile:", createError);
-                        // Set basic user data from auth
+                        const newProfile = await initializeStudentProfileForUser(user);
+                        profileData = newProfile;
+                        console.log("Created new profile:", newProfile);
+                    } catch (profileCreateError) {
+                        console.error('Profile creation error:', profileCreateError);
+                        // Create minimal profile data as fallback
                         profileData = {
                             id: user.id,
                             email: user.email,
@@ -61,9 +62,16 @@ const Dashboard = () => {
                             coins: 0
                         };
                     }
+                } else {
+                    console.log("Found existing profile with name:", profileData.name);
+                    console.log("Full profile data:", profileData);
                 }
 
                 setUserData(profileData);
+                
+                // Debug: Test the getDisplayName function with the profile data
+                const debugDisplayName = getDisplayName(profileData, 'Student');
+                console.log("Computed display name:", debugDisplayName);
 
                 // 3. Fetch user's uploaded materials count
                 let notesCount = 0;

@@ -78,11 +78,16 @@ const handleGoogleSignUp = async () => {
         }
         
         try {
-            // Send OTP for email verification
+            // Send OTP for email verification with user data
             const { error: otpError } = await supabase.auth.signInWithOtp({
                 email: email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback`
+                    emailRedirectTo: `${window.location.origin}/auth/callback`,
+                    createUser: true, // Ensure user creation is allowed
+                    data: {
+                        name: name,
+                        full_name: name,
+                    }
                 }
             });
 
@@ -116,48 +121,46 @@ const handleGoogleSignUp = async () => {
         }
 
         try {
-            // First verify the OTP
-            const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+            // Verify OTP - the user was already created with data during signInWithOtp
+            const { data, error: verifyError } = await supabase.auth.verifyOtp({
                 email: pendingUserData.email,
                 token: getOtpString(),
-                type: 'email'
+                type: 'email' // Use 'email' type since user was created during signInWithOtp
             });
 
             if (verifyError) {
                 throw verifyError;
             }
 
-            // If OTP is verified, now create the account
-            const { data, error: signUpError } = await supabase.auth.signUp({
-                email: pendingUserData.email,
-                password: pendingUserData.password,
-                options: {
-                    data: {
-                        name: pendingUserData.name,
-                        full_name: pendingUserData.name,
-                    }
-                }
-            });
-
-            if (signUpError) {
-                throw signUpError;
-            }
-
             setSuccessMsg('Account created successfully! Setting up your profile...');
 
-            // Create student profile
+            // Create student profile using the data from verifyOtp response
             try {
                 if (data.user && data.session) {
+                    // Get the user's real name from auth metadata or use the form name
+                    const userName = data.user.user_metadata?.full_name || 
+                                   data.user.user_metadata?.name || 
+                                   pendingUserData.name;
+                    
+                    console.log("Creating profile with name:", userName, "for user:", data.user.id);
+                    console.log("User metadata:", data.user.user_metadata);
+                    
                     await ensureStudentProfile({
                         id: data.user.id,
                         email: pendingUserData.email,
-                        fullName: pendingUserData.name,
+                        fullName: userName,
                     });
+                    
+                    console.log("Profile created successfully for:", pendingUserData.email);
                 }
             } catch (profileError) {
+                console.error('Profile creation error:', profileError);
                 if (isRowLevelSecurityError(profileError)) {
-                    console.error('Profile creation error:', profileError);
+                    console.error('RLS error detected - profile creation failed due to permissions');
+                } else {
+                    console.error('Other profile creation error:', profileError.message);
                 }
+                // Don't fail registration if profile creation fails
             }
 
             // Navigate to dashboard
