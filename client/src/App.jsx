@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Navigate, Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -32,42 +32,6 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminApprovals = lazy(() => import('./pages/admin/AdminApprovals'));
 const AdminMaterials = lazy(() => import('./pages/admin/AdminMaterials'));
 const AdminPYQs = lazy(() => import('./pages/admin/AdminPYQs'));
-const AdminRewards = lazy(() => import('./pages/admin/AdminRewards'));
-const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
-const AdminTransactions = lazy(() => import('./pages/admin/AdminTransactions'));
-const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
-const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
-const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
-const AdminTickets = lazy(() => import('./pages/admin/AdminTickets'));
-const SupportHelp = lazy(() => import('./pages/SupportHelp'));
-const Notifications = lazy(() => import('./pages/Notifications'));
-
-const adminRoutes = [
-  { path: '/admin-dashboard', element: <AdminDashboard /> },
-  { path: '/admin-dashboard/approvals', element: <AdminApprovals /> },
-  { path: '/admin-dashboard/materials', element: <AdminMaterials /> },
-  { path: '/admin-dashboard/pyqs', element: <AdminPYQs /> },
-  { path: '/admin-dashboard/rewards', element: <AdminRewards /> },
-  { path: '/admin-dashboard/users', element: <AdminUsers /> },
-  { path: '/admin-dashboard/transactions', element: <AdminTransactions /> },
-  { path: '/admin-dashboard/reports', element: <AdminReports /> },
-  { path: '/admin-dashboard/events', element: <AdminEvents /> },
-  { path: '/admin-dashboard/analytics', element: <AdminAnalytics /> },
-  { path: '/admin-dashboard/tickets', element: <AdminTickets /> },
-];
-
-const legacyAdminRoutes = [
-  { from: '/admin', to: '/admin-dashboard' },
-  { from: '/admin/approvals', to: '/admin-dashboard/approvals' },
-  { from: '/admin/materials', to: '/admin-dashboard/materials' },
-  { from: '/admin/pyqs', to: '/admin-dashboard/pyqs' },
-  { from: '/admin/rewards', to: '/admin-dashboard/rewards' },
-  { from: '/admin/users', to: '/admin-dashboard/users' },
-  { from: '/admin/transactions', to: '/admin-dashboard/transactions' },
-  { from: '/admin/reports', to: '/admin-dashboard/reports' },
-  { from: '/admin/events', to: '/admin-dashboard/events' },
-  { from: '/admin/analytics', to: '/admin-dashboard/analytics' },
-];
 
 const Home = () => (
   <>
@@ -87,89 +51,6 @@ const RouteLoader = () => (
   </div>
 );
 
-const HomeWithOAuthHandler = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    const handleOAuth = async () => {
-      const code = searchParams.get('code');
-      const error = searchParams.get('error');
-      
-      console.log('OAuth Check - Code:', code, 'Error:', error);
-      console.log('All URL params:', Object.fromEntries(searchParams.entries()));
-      
-      // Only process if we have OAuth parameters
-      if (!code && !error) {
-        console.log('No OAuth parameters, showing home');
-        return;
-      }
-
-      console.log('Processing OAuth...');
-      setIsProcessing(true);
-
-      try {
-        if (error) {
-          console.error('OAuth Error:', error);
-          navigate('/login', { state: { error: `Authentication failed: ${error}` } });
-          return;
-        }
-
-        if (code) {
-          console.log('Exchanging code for session...');
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          
-          if (exchangeError) {
-            console.error('Exchange Error:', exchangeError);
-            navigate('/login', { state: { error: exchangeError.message } });
-            return;
-          }
-
-          console.log('Session established:', data);
-          
-          if (data?.session?.user) {
-            const user = data.session.user;
-            console.log('User authenticated:', user);
-            
-            // Simple redirect to dashboard - skip complex profile creation for now
-            console.log('Redirecting to dashboard...');
-            setTimeout(() => {
-              navigate('/dashboard', { replace: true });
-            }, 1000);
-          } else {
-            throw new Error('No user session established');
-          }
-        }
-      } catch (err) {
-        console.error('OAuth Processing Error:', err);
-        navigate('/login', { state: { error: err.message || 'Authentication failed' } });
-      } finally {
-        // Always reset processing state
-        setIsProcessing(false);
-      }
-    };
-
-    handleOAuth();
-  }, [searchParams, navigate]);
-
-  // Show loading if processing OAuth
-  if (isProcessing || searchParams.get('code') || searchParams.get('error')) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            {searchParams.get('error') ? 'Authentication failed...' : 'Completing sign in...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show normal home page
-  return <Home />;
-};
 
 function App() {
   return (
@@ -177,7 +58,7 @@ function App() {
       <div className="font-sans text-gray-900 selection:bg-violet-500 selection:text-white">
         <Suspense fallback={<RouteLoader />}>
           <Routes>
-            <Route path="/" element={<HomeWithOAuthHandler />} />
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -195,24 +76,13 @@ function App() {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
-            <Route path="/support" element={<ProtectedRoute><SupportHelp /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
-            {adminRoutes.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={<AdminGuard>{route.element}</AdminGuard>}
-              />
-            ))}
+            <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+            <Route path="/admin/approvals" element={<AdminGuard><AdminApprovals /></AdminGuard>} />
+            <Route path="/admin/materials" element={<AdminGuard><AdminMaterials /></AdminGuard>} />
+            <Route path="/admin/pyqs" element={<AdminGuard><AdminPYQs /></AdminGuard>} />
 
-            {legacyAdminRoutes.map((route) => (
-              <Route
-                key={route.from}
-                path={route.from}
-                element={<Navigate to={route.to} replace />}
-              />
-            ))}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </div>
