@@ -16,18 +16,7 @@ const Login = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const getRedirectUrl = () => {
-    const isDevelopment = import.meta.env.DEV;
-    const baseUrl = window.location.origin;
-    
-    if (isDevelopment) {
-        // Development uses localhost with current port
-        return `${baseUrl}/auth/callback`;
-    }
-    
-    // Production uses hiteshkumar24.in
-    return 'https://hiteshkumar24.in/auth/callback';
-};
+
 
 const handleGoogleSignIn = async () => {
         setError(null);
@@ -35,7 +24,10 @@ const handleGoogleSignIn = async () => {
 
         try {
             const { data, error: googleError } = await supabase.auth.signInWithOAuth({
-                provider: 'google'
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`
+                }
             });
 
             if (googleError) {
