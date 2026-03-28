@@ -29,6 +29,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Upload = lazy(() => import('./pages/Upload'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Help = lazy(() => import('./pages/Help'));
+const SupportHelp = lazy(() => import('./pages/SupportHelp'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminApprovals = lazy(() => import('./pages/admin/AdminApprovals'));
@@ -88,6 +89,7 @@ function App() {
             <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+            <Route path="/support-center" element={<ProtectedRoute><SupportHelp /></ProtectedRoute>} />
 
             <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
             <Route path="/admin/approvals" element={<AdminGuard><AdminApprovals /></AdminGuard>} />

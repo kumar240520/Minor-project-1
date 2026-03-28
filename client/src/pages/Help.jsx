@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Bell, BookOpen, MessageCircle, FileQuestion, Mail, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import Sidebar, { SidebarProvider } from '../components/Sidebar';
@@ -132,9 +133,9 @@ const Help = () => {
                                     </div>
                                     <h4 className="font-bold text-gray-800 mb-2">Still need help?</h4>
                                     <p className="text-sm text-gray-500 mb-4">Our support team is here for you.</p>
-                                    <button className="w-full bg-gray-900 text-white font-bold py-2.5 rounded-xl hover:bg-gray-800 transition-colors">
+                                    <Link to="/support-center" className="w-full bg-gray-900 text-white font-bold py-2.5 rounded-xl hover:bg-gray-800 transition-colors inline-block text-center">
                                         Contact Support
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
 
