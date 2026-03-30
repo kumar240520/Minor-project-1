@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    LayoutDashboard, 
+import {
+    LayoutDashboard,
     Clock3,
-    FileCheck, 
+    FileCheck,
     BookOpenCheck,
-    Award, 
-    Users, 
-    ReceiptText, 
-    AlertOctagon, 
-    CalendarDays, 
+    Award,
+    Users,
+    ReceiptText,
+    AlertOctagon,
+    CalendarDays,
     BarChart3,
     LogOut,
     HelpCircle,
     Menu,
-    X
+    X,
+    MessageSquare
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -34,6 +35,7 @@ const ResponsiveAdminSidebar = () => {
         { path: `${adminBasePath}/transactions`, label: 'Transactions', icon: ReceiptText },
         { path: `${adminBasePath}/reports`, label: 'Reports', icon: AlertOctagon },
         { path: `${adminBasePath}/events`, label: 'Events', icon: CalendarDays },
+        { path: `${adminBasePath}/committee-posts`, label: 'Committee Posts', icon: MessageSquare },
         { path: `${adminBasePath}/tickets`, label: 'Support Tickets', icon: HelpCircle },
         { path: `${adminBasePath}/analytics`, label: 'Analytics', icon: BarChart3 },
     ];
@@ -94,7 +96,7 @@ const ResponsiveAdminSidebar = () => {
                     <div className="px-3 mb-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                         Main Menu
                     </div>
-                    
+
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== adminBasePath);
                         return (
@@ -104,8 +106,8 @@ const ResponsiveAdminSidebar = () => {
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={`
                                     flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group
-                                    ${isActive 
-                                        ? 'bg-gradient-to-r from-violet-600/20 to-indigo-600/20 text-violet-400 border border-violet-600/30' 
+                                    ${isActive
+                                        ? 'bg-gradient-to-r from-violet-600/20 to-indigo-600/20 text-violet-400 border border-violet-600/30'
                                         : 'hover:bg-slate-800 hover:text-white hover:translate-x-1'
                                     }
                                 `}
@@ -134,7 +136,7 @@ const ResponsiveAdminSidebar = () => {
                         <p className="text-xs text-slate-400">Admin Access</p>
                         <p className="text-sm font-medium text-slate-300">Level 1</p>
                     </div>
-                    <button 
+                    <button
                         onClick={handleLogout}
                         className="flex items-center space-x-3 text-slate-400 hover:text-red-400 w-full px-4 py-3 rounded-xl transition-all duration-200 hover:bg-red-600/10 hover:border hover:border-red-600/30"
                     >

@@ -42,6 +42,7 @@ const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
 const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
 const AdminTickets = lazy(() => import('./pages/admin/AdminTickets'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminCommitteePosts = lazy(() => import('./pages/admin/AdminCommitteePosts'));
 
 const Home = () => (
   <SidebarProvider>
@@ -100,6 +101,7 @@ function App() {
             <Route path="/admin/transactions" element={<AdminGuard><AdminTransactions /></AdminGuard>} />
             <Route path="/admin/reports" element={<AdminGuard><AdminReports /></AdminGuard>} />
             <Route path="/admin/events" element={<AdminGuard><AdminEvents /></AdminGuard>} />
+            <Route path="/admin/committee-posts" element={<AdminGuard><AdminCommitteePosts /></AdminGuard>} />
             <Route path="/admin/tickets" element={<AdminGuard><AdminTickets /></AdminGuard>} />
             <Route path="/admin/analytics" element={<AdminGuard><AdminAnalytics /></AdminGuard>} />
 

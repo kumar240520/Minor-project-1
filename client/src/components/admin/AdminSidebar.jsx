@@ -12,7 +12,8 @@ import {
     CalendarDays, 
     BarChart3,
     LogOut,
-    HelpCircle
+    HelpCircle,
+    Bell
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -21,6 +22,7 @@ const AdminSidebar = () => {
 
     const adminBasePath = '/admin';
     const navItems = [
+        { path: `${adminBasePath}/committee-posts`, label: 'Committee Posts', icon: Users },
         { path: `${adminBasePath}/dashboard`, label: 'Overview', icon: LayoutDashboard },
         { path: `${adminBasePath}/approvals`, label: 'Pending Approvals', icon: Clock3 },
         { path: `${adminBasePath}/materials`, label: 'Materials Approval', icon: FileCheck },

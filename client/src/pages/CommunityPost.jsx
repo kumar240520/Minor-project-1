@@ -211,6 +211,13 @@ const CommunityPost = () => {
     };
 
     const handleDeletePost = async (id) => {
+        // Find the post to check if it's a committee post
+        const post = posts.find(p => p.id === id);
+        if (post && post.author_role === 'admin') {
+            alert('Committee posts cannot be deleted by students.');
+            return;
+        }
+        
         if (!window.confirm("Delete this post?")) return;
         
         try {
@@ -332,7 +339,7 @@ const CommunityPost = () => {
                                                 <p className="text-xs text-gray-500">{post.author_role} • {new Date(post.created_at).toLocaleString()}</p>
                                             </div>
                                         </div>
-                                        {currentUser && currentUser.id === post.user_id && (
+                                        {currentUser && currentUser.id === post.user_id && post.author_role !== 'admin' && (
                                             <button 
                                                 onClick={() => handleDeletePost(post.id)}
                                                 className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
