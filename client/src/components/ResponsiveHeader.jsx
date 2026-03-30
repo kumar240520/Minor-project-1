@@ -119,6 +119,7 @@ const ResponsiveHeader = ({
       const { data: events, error: evError } = await supabase
         .from('calendar_events')
         .select('id, title, date, type')
+        .eq('is_global', true)  // Only search global events
         .ilike('title', `%${query}%`)
         .limit(3);
 

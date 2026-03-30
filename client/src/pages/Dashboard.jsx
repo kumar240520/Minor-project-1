@@ -125,6 +125,7 @@ const Dashboard = () => {
                     const { data: events, error: eventsError } = await supabase
                         .from('calendar_events')
                         .select('*')
+                        .eq('is_global', true)  // Only fetch global (admin) events
                         .gte('date', new Date().toISOString())
                         .order('date', { ascending: true })
                         .limit(3);
