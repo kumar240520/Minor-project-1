@@ -13,8 +13,8 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Legend
 } from 'recharts';
-import { formatDistanceToNow, format, subDays } from 'date-fns';
-import { getDisplayName } from '../../utils/auth';
+import { format, subDays } from 'date-fns';
+import { getDisplayName, formatLocalRelativeTime } from '../../utils/auth';
 import {
     downloadMaterialFile,
     fetchPendingMaterials,
@@ -231,7 +231,7 @@ const AdminDashboard = () => {
                                                             {itemType === 'pyq' ? 'PYQ' : 'Material'}
                                                         </span>
                                                         <span className="text-xs text-slate-400">
-                                                            {item.created_at ? formatDistanceToNow(new Date(item.created_at), { addSuffix: true }) : ''}
+                                                            {formatLocalRelativeTime(item.created_at)}
                                                         </span>
                                                     </div>
                                                     <h3 className="mt-3 font-semibold text-slate-900 line-clamp-2">

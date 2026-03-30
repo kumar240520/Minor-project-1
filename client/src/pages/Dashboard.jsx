@@ -7,7 +7,7 @@ import {
 import Layout from '../components/Layout';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { formatDistanceToNow } from 'date-fns';
+import { formatLocalRelativeTime, formatLocalDate } from '../utils/auth';
 import { getDisplayName, getFirstName, initializeStudentProfileForUser } from '../utils/auth';
 
 const Dashboard = () => {
@@ -106,11 +106,11 @@ const Dashboard = () => {
                         .limit(3);
 
                     if (!uploadsError && recentUploads) {
-                        const formattedActivity = recentUploads.map(item => ({
+                        const formattedActivity = recentUploads.map((item) => ({
                             id: item.id,
                             title: `Uploaded "${item.title}"`,
                             type: 'upload',
-                            date: formatDistanceToNow(new Date(item.created_at), { addSuffix: true }),
+                            date: formatLocalRelativeTime(item.created_at),
                             icon: FileText,
                             color: 'text-blue-500'
                         }));
@@ -122,15 +122,17 @@ const Dashboard = () => {
 
                 // 6. Fetch Upcoming Events
                 try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    
                     const { data: events, error: eventsError } = await supabase
                         .from('calendar_events')
                         .select('*')
-                        .eq('is_global', true)  // Only fetch global (admin) events
-                        .gte('date', new Date().toISOString())
+                        .or(`is_global.eq.true,user_id.eq.${user?.id}`)  // Global events OR user's own events
+                        .gte('date', new Date().toISOString().split('T')[0])  // Compare only date part
                         .order('date', { ascending: true })
                         .limit(3);
 
-                    if (!eventsError && events) {
+                    if (!eventsError && events && events.length > 0) {
                         const formattedEvents = events.map(event => {
                             const eventDate = new Date(event.date);
                             const dateStr = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

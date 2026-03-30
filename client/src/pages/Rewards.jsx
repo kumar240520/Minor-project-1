@@ -4,8 +4,7 @@ import { Search, Bell, Award, Gift, Zap, TrendingUp, ChevronRight, Share2, Clock
 import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
-import { formatDistanceToNow } from 'date-fns';
-import { getDisplayName, initializeStudentProfileForUser } from '../utils/auth';
+import { formatLocalRelativeTime, getDisplayName, initializeStudentProfileForUser } from '../utils/auth';
 
 const Rewards = () => {
     const [userData, setUserData] = useState(null);
@@ -218,7 +217,7 @@ const Rewards = () => {
             id: tx.id,
             action: getTransactionName(),
             points: isEarn ? `+${tx.amount}` : `-${tx.amount}`,
-            date: formatDistanceToNow(new Date(tx.created_at), { addSuffix: true }),
+            date: formatLocalRelativeTime(tx.created_at),
             type: isEarn ? 'earn' : 'spend',
             color: isEarn ? 'text-emerald-500' : 'text-red-500',
             bg: isEarn ? 'bg-emerald-50' : 'bg-red-50'

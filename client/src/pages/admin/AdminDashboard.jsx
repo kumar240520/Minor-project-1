@@ -18,27 +18,7 @@ import {
     downloadMaterialFile,
     fetchPendingMaterials,
 } from '../../utils/materials';
-
-const formatTimeAgo = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) {
-        const m = Math.floor(diffInSeconds / 60);
-        return `${m} minute${m > 1 ? 's' : ''} ago`;
-    }
-    if (diffInSeconds < 86400) {
-        const h = Math.floor(diffInSeconds / 3600);
-        return `${h} hour${h > 1 ? 's' : ''} ago`;
-    }
-    if (diffInSeconds < 604800) {
-        const d = Math.floor(diffInSeconds / 86400);
-        return `${d} day${d > 1 ? 's' : ''} ago`;
-    }
-    return format(date, 'MMM dd, yyyy');
-};
+import { getDisplayName, formatLocalRelativeTime } from '../../utils/auth';
 
 const getMaterialType = (item) => {
     const t = (item.type || item.material_type || item.category || '').toLowerCase();
@@ -393,7 +373,7 @@ const AdminDashboard = () => {
                                                         }`}>
                                                             {itemType === 'pyq' ? 'PYQ' : 'Material'}
                                                         </span>
-                                                        <span className="text-xs text-slate-400">{formatTimeAgo(item.created_at)}</span>
+                                                        <span className="text-xs text-slate-400">{formatLocalRelativeTime(item.created_at)}</span>
                                                     </div>
                                                     <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 mb-1">
                                                         {item.title || item.subject || 'Untitled submission'}
@@ -468,7 +448,7 @@ const AdminDashboard = () => {
                                                         <span className={`text-sm font-bold ${tx.transaction_type === 'EARN' ? 'text-emerald-600' : 'text-rose-500'}`}>
                                                             {tx.transaction_type === 'EARN' ? '+' : '-'}{tx.amount}
                                                         </span>
-                                                        <span className="text-xs text-slate-400">{formatTimeAgo(tx.created_at)}</span>
+                                                        <span className="text-xs text-slate-400">{formatLocalRelativeTime(tx.created_at)}</span>
                                                     </div>
                                                 </div>
                                             );

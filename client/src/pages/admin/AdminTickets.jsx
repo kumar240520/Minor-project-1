@@ -3,6 +3,7 @@ import { HelpCircle, Clock, CheckCircle, Trash2, ShieldAlert } from 'lucide-reac
 import AdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
 import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader';
 import { supabase } from '../../supabaseClient';
+import { formatLocalRelativeTime } from '../../utils/auth';
 
 const AdminTickets = () => {
     const [tickets, setTickets] = useState([]);
@@ -123,7 +124,7 @@ const AdminTickets = () => {
                                                         {ticket.ticket_date}
                                                     </div>
                                                     <div className="text-xs text-slate-400 mt-1">
-                                                        Submitted: {new Date(ticket.created_at).toLocaleDateString()}
+                                                        Submitted: {formatLocalRelativeTime(ticket.created_at)}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">

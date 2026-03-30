@@ -3,6 +3,7 @@ import { Search, Bell, MessageSquare, ThumbsUp, MessageCircle, Send, Trash2, Plu
 import ResponsiveAdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
 import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader';
 import { supabase } from '../../supabaseClient';
+import { formatLocalDate } from '../../utils/auth';
 
 const AdminCommitteePosts = () => {
     const [posts, setPosts] = useState([]);
@@ -274,7 +275,7 @@ const AdminCommitteePosts = () => {
                                                                 {post.author_role === 'admin' ? 'Admin' : 'Student'}
                                                             </span>
                                                             <span className="text-sm text-gray-500">
-                                                                {new Date(post.created_at).toLocaleDateString()}
+                                                                {formatLocalDate(post.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                             </span>
                                                         </div>
                                                         

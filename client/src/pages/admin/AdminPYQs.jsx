@@ -6,6 +6,7 @@ import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader'
 import MaterialPreviewModal from '../../components/materials/MaterialPreviewModal';
 import useMaterialPreview from '../../hooks/useMaterialPreview';
 import { supabase } from '../../supabaseClient';
+import { formatLocalDate } from '../../utils/auth';
 import {
   approveMaterialUpload,
   downloadMaterialFile,
@@ -224,7 +225,7 @@ const AdminPYQs = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
-                            {format(new Date(pyq.created_at), 'MMM dd, yyyy')}
+                            {formatLocalDate(pyq.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end space-x-2">

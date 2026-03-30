@@ -116,10 +116,11 @@ const ResponsiveHeader = ({
       }
 
       // 3. Search Calendar Events Table
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: events, error: evError } = await supabase
         .from('calendar_events')
         .select('id, title, date, type')
-        .eq('is_global', true)  // Only search global events
+        .or(`is_global.eq.true,user_id.eq.${user?.id}`)  // Global events OR user's own events
         .ilike('title', `%${query}%`)
         .limit(3);
 

@@ -2,6 +2,58 @@ import { supabase } from '../supabaseClient';
 
 const VALID_ROLES = new Set(['student', 'admin']);
 
+// Utility function to convert UTC timestamp to local timezone
+export const formatLocalDate = (utcDate, options = {}) => {
+  if (!utcDate) return 'Unknown';
+  
+  // Ensure the timestamp has 'Z' suffix to indicate UTC
+  const utcTimestamp = utcDate.endsWith('Z') ? utcDate : utcDate + 'Z';
+  
+  // Create Date object and ensure it's treated as UTC
+  const date = new Date(utcTimestamp);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  
+  // Default options for local date formatting
+  const defaultOptions = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    ...options
+  };
+  
+  return date.toLocaleDateString(undefined, defaultOptions);
+};
+
+// Utility function to format relative time with proper timezone
+export const formatLocalRelativeTime = (utcDate) => {
+  if (!utcDate) return 'Unknown time';
+  
+  // Ensure the timestamp has 'Z' suffix to indicate UTC
+  const utcTimestamp = utcDate.endsWith('Z') ? utcDate : utcDate + 'Z';
+  
+  // Create Date object and ensure it's treated as UTC
+  const date = new Date(utcTimestamp);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) return 'Invalid time';
+  
+  // Get current time in local timezone
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  if (diffInSeconds < 60) return 'just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  
+  // For older dates, return formatted date
+  return formatLocalDate(utcDate);
+};
+
 const getTrimmedString = (value) => {
   if (typeof value !== 'string') {
     return null;

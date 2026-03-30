@@ -3,35 +3,11 @@ import { Award, Gift, History, Users } from 'lucide-react';
 import ResponsiveAdminSidebar from '../../components/admin/ResponsiveAdminSidebar';
 import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader';
 import { supabase } from '../../supabaseClient';
-import { getDisplayName } from '../../utils/auth';
+import { getDisplayName, formatLocalRelativeTime } from '../../utils/auth';
 import {
   fetchRewardTransactions,
   getTransactionDescription,
 } from '../../utils/transactions';
-
-// Better time formatting function
-const formatTimeAgo = (dateString) => {
-    if (!dateString) return '';
-    
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) {
-        return 'Just now';
-    } else if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600);
-        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 604800) {
-        const days = Math.floor(diffInSeconds / 86400);
-        return `${days} day${days > 1 ? 's' : ''} ago`;
-    } else {
-        return date.toLocaleDateString();
-    }
-};
 
 const rewardCatalog = [
   { id: 'gift-card-500', title: 'Amazon Gift Card Rs 500', cost: 2000 },
@@ -179,7 +155,7 @@ const AdminRewards = () => {
                             {getTransactionDescription(reward)}
                           </p>
                           <p className="text-xs text-slate-400 mt-1">
-                            {formatTimeAgo(reward.created_at)}
+                            {formatLocalRelativeTime(reward.created_at)}
                           </p>
                         </div>
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">

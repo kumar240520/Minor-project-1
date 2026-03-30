@@ -5,6 +5,7 @@ import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
+import { formatLocalDate } from '../utils/auth';
 
 const SupportHelp = () => {
     const [tickets, setTickets] = useState([]);
@@ -217,7 +218,7 @@ const SupportHelp = () => {
                                                         <div className="flex items-center justify-between text-xs text-gray-400">
                                                             <span className="flex items-center">
                                                                 <Clock className="w-3.5 h-3.5 mr-1" />
-                                                                {new Date(ticket.created_at).toLocaleDateString()}
+                                                                {formatLocalDate(ticket.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                             </span>
                                                             <span className="font-medium">Ticket #{ticket.id.substring(0, 8)}</span>
                                                         </div>

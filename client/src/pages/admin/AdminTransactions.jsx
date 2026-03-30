@@ -6,7 +6,7 @@ import {
     Search, Filter, ReceiptText, 
     ArrowUpRight, ArrowDownRight, User
 } from 'lucide-react';
-import { getDisplayName } from '../../utils/auth';
+import { getDisplayName, formatLocalDate } from '../../utils/auth';
 import {
     fetchTransactionsWithUsers,
     getTransactionDescription,
@@ -175,7 +175,7 @@ const AdminTransactions = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right text-slate-500 whitespace-nowrap">
-                                                    {format(new Date(tx.created_at), 'MMM dd, yyyy h:mm a')}
+                                                    {formatLocalDate(tx.created_at, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                     <br/>
                                                     <span className={`text-xs mt-1 inline-block ${getTransactionStatus(tx) === 'completed' ? 'text-emerald-500' : 'text-amber-500 capitalize'}`}>
                                                         {getTransactionStatus(tx)}

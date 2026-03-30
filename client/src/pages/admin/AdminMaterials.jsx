@@ -6,36 +6,13 @@ import ResponsiveAdminHeader from '../../components/admin/ResponsiveAdminHeader'
 import MaterialPreviewModal from '../../components/materials/MaterialPreviewModal';
 import useMaterialPreview from '../../hooks/useMaterialPreview';
 import { supabase } from '../../supabaseClient';
+import { formatLocalRelativeTime } from '../../utils/auth';
 import {
   approveMaterialUpload,
   downloadMaterialFile,
   fetchPendingMaterials as fetchPendingMaterialSubmissions,
   rejectMaterialUpload,
 } from '../../utils/materials';
-
-// Better time formatting function
-const formatTimeAgo = (dateString) => {
-    if (!dateString) return '';
-    
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) {
-        return 'Just now';
-    } else if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600);
-        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 604800) {
-        const days = Math.floor(diffInSeconds / 86400);
-        return `${days} day${days > 1 ? 's' : ''} ago`;
-    } else {
-        return format(date, 'MMM dd, yyyy');
-    }
-};
 
 const APPROVAL_REWARD = 40;
 
@@ -238,7 +215,7 @@ const AdminMaterials = () => {
                         </td>
                         <td className="px-6 py-4">{material.uploader_name || 'Anonymous'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-slate-500">
-                          {formatTimeAgo(material.created_at)}
+                          {formatLocalRelativeTime(material.created_at)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">

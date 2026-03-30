@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Calendar, Award, BookOpen, Settings, LogOut } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { getDisplayName, getFirstName, getDisplayInitial } from '../utils/auth';
+import { getDisplayName, getFirstName, getDisplayInitial, formatLocalDate } from '../utils/auth';
 import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 
@@ -115,7 +115,7 @@ const Profile = () => {
                                             <p className="text-violet-100">{userData?.email}</p>
                                             <div className="flex items-center mt-2 text-sm">
                                                 <Calendar className="w-4 h-4 mr-1" />
-                                                Joined {new Date(userData?.created_at).toLocaleDateString()}
+                                                Joined {formatLocalDate(userData?.created_at, { year: 'numeric', month: 'long', day: 'numeric' })}
                                             </div>
                                         </div>
                                     </div>

@@ -5,6 +5,7 @@ import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { formatLocalDate } from '../utils/auth';
 import {
     deleteMaterialUpload,
     fetchStudentMaterials,
@@ -147,7 +148,7 @@ const MyMaterials = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">
-                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                    {formatLocalDate(item.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                 </td>
                                                 <td className="px-6 py-4 text-gray-600">
                                                     <div className="flex space-x-4">

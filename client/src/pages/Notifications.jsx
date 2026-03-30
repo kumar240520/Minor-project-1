@@ -5,6 +5,7 @@ import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
+import { formatLocalRelativeTime } from '../utils/auth';
 
 const Notifications = () => {
     const [notifications, setNotifications] = useState([]);
@@ -172,7 +173,7 @@ const Notifications = () => {
                                                             {notif.title}
                                                         </h4>
                                                         <span className="text-xs text-gray-400 whitespace-nowrap pt-1">
-                                                            {new Date(notif.created_at).toLocaleDateString()}
+                                                            {formatLocalRelativeTime(notif.created_at)}
                                                         </span>
                                                     </div>
                                                     <p className={`text-sm ${!notif.is_read ? 'text-gray-700' : 'text-gray-500'} mb-3`}>

@@ -4,7 +4,7 @@ import { Search, Bell, MessageSquare, ThumbsUp, MessageCircle, Send, Trash2 } fr
 import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
-import { getDisplayName } from '../utils/auth';
+import { getDisplayName, formatLocalRelativeTime } from '../utils/auth';
 
 const CommunityPost = () => {
     const [posts, setPosts] = React.useState([]);
@@ -336,7 +336,7 @@ const CommunityPost = () => {
                                             <img src={post.author_avatar} alt={post.author_name} className="h-12 w-12 rounded-full border border-gray-200" />
                                             <div>
                                                 <h3 className="font-bold text-gray-800">{post.author_name}</h3>
-                                                <p className="text-xs text-gray-500">{post.author_role} • {new Date(post.created_at).toLocaleString()}</p>
+                                                <p className="text-xs text-gray-500">{post.author_role} • {formatLocalRelativeTime(post.created_at)}</p>
                                             </div>
                                         </div>
                                         {currentUser && currentUser.id === post.user_id && post.author_role !== 'admin' && (
@@ -432,7 +432,7 @@ const CommunityPost = () => {
                                                                     <span className="font-semibold text-sm text-gray-800">{reply.author_name}</span>
                                                                     <span className="text-xs text-gray-500">{reply.author_role}</span>
                                                                     <span className="text-xs text-gray-400">
-                                                                        {new Date(reply.created_at).toLocaleString()}
+                                                                        {formatLocalRelativeTime(reply.created_at)}
                                                                     </span>
                                                                 </div>
                                                                 <p className="text-sm text-gray-700 leading-relaxed">{reply.content}</p>

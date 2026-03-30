@@ -7,7 +7,7 @@ import {
     Search, UserCircle, Coins,
     Shield, Ban, Mail, Calendar
 } from 'lucide-react';
-import { getDisplayInitial, getDisplayName } from '../../utils/auth';
+import { getDisplayInitial, getDisplayName, formatLocalDate } from '../../utils/auth';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState([]);
@@ -162,7 +162,7 @@ const AdminUsers = () => {
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center text-slate-500 whitespace-nowrap">
                                                             <Calendar className="w-4 h-4 mr-2 text-slate-400" />
-                                                            {user.created_at ? format(new Date(user.created_at), 'MMM dd, yyyy') : 'Unknown'}
+                                                            {user.created_at ? formatLocalDate(user.created_at, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">

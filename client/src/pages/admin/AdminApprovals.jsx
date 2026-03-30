@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
+import { formatLocalRelativeTime } from '../../utils/auth';
 import {
   AlertCircle,
   BookOpenCheck,
@@ -326,7 +326,7 @@ const AdminApprovals = () => {
                     const title = item.title || item.subject || 'Untitled submission';
                     const uploader = item.uploader_name || 'Anonymous Student';
                     const submittedAt = item.created_at
-                      ? formatDistanceToNow(new Date(item.created_at), { addSuffix: true })
+                      ? formatLocalRelativeTime(item.created_at)
                       : 'Unknown date';
 
                     return (

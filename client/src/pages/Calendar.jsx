@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bell, Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { Search, Bell, MessageSquare, ThumbsUp, MessageCircle, Send, Trash2, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import Sidebar, { SidebarProvider } from '../components/Sidebar';
 import ResponsiveHeader from '../components/ResponsiveHeader';
 import { supabase } from '../supabaseClient';
+import { formatLocalDate } from '../utils/auth';
 
 const Calendar = () => {
     const [events, setEvents] = React.useState([]);
