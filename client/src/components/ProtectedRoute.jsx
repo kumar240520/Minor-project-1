@@ -26,7 +26,6 @@ const ProtectedRoute = ({ children }) => {
                 }
                 
                 setSession(sessionData);
-                console.log('ProtectedRoute - Session check result:', !!sessionData);
             } catch (error) {
                 console.error('Session check error:', error);
                 setSession(null);
@@ -41,7 +40,6 @@ const ProtectedRoute = ({ children }) => {
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
-            console.log('ProtectedRoute - Auth state change:', _event, session?.user?.email);
             setSession(session);
         });
 
@@ -64,11 +62,9 @@ const ProtectedRoute = ({ children }) => {
         if (location.pathname === '/login' || location.search.includes('code=')) {
             return children;
         }
-        console.log('ProtectedRoute - No session, redirecting to login');
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    console.log('ProtectedRoute - Session exists, allowing access');
     return children;
 };
 
