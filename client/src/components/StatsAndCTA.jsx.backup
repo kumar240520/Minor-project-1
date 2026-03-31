@@ -4,36 +4,6 @@ import { Users, FileText, CalendarCheck, Award, Sparkles, ArrowRight, Zap } from
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-const Counter = ({ from, to, duration = 2, suffix = "" }) => {
-    const [count, setCount] = useState(from);
-    const nodeRef = useRef(null);
-    const isInView = useInView(nodeRef, { once: true, margin: "-50px" });
-
-    useEffect(() => {
-        if (isInView) {
-            // If 'to' is already formatted (like "5K+"), use it directly
-            if (typeof to === 'string' && to.includes('K')) {
-                setCount(to);
-                return;
-            }
-            
-            // Otherwise animate from number to number
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / (duration * 1000), 1);
-                setCount(Math.floor(progress * (to - from) + from));
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
-    }, [isInView, from, to, duration]);
-
-    return <span ref={nodeRef}>{count}{suffix}</span>;
-};
-
 const StatsAndCTA = () => {
     const [session, setSession] = useState(null);
     const [role, setRole] = useState('student');
@@ -61,7 +31,7 @@ const StatsAndCTA = () => {
             id: 3, 
             name: 'Events Hosted', 
             value: 0, 
-            suffix: '', 
+            suffix: '+', 
             icon: <CalendarCheck className="w-6 h-6" />,
             color: 'from-emerald-500 to-green-500',
             bgColor: 'bg-gradient-to-br from-emerald-50 to-green-50'
@@ -70,12 +40,40 @@ const StatsAndCTA = () => {
             id: 4, 
             name: 'Coins Rewarded', 
             value: 0, 
-            suffix: '', 
+            suffix: '+', 
             icon: <Award className="w-6 h-6" />,
             color: 'from-yellow-500 to-amber-500',
             bgColor: 'bg-gradient-to-br from-yellow-50 to-amber-50'
         },
     ]);
+
+const Counter = ({ from, to, duration = 2, suffix = "" }) => {
+    const [count, setCount] = useState(from);
+    const nodeRef = useRef(null);
+    const isInView = useInView(nodeRef, { once: true, margin: "-50px" });
+
+    useEffect(() => {
+        if (isInView) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / (duration * 1000), 1);
+                setCount(Math.floor(progress * (to - from) + from));
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+    }, [isInView, from, to, duration]);
+
+    return <span ref={nodeRef}>{count}{suffix}</span>;
+};
+
+const StatsAndCTA = () => {
+    const [session, setSession] = useState(null);
+    const [role, setRole] = useState('student');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
@@ -119,66 +117,21 @@ const StatsAndCTA = () => {
                 .select('*', { count: 'exact', head: true })
                 .eq('is_global', true);
 
-            // Fetch total coins awarded (try multiple approaches)
-            let totalCoins = 0;
-            
-            try {
-                // Method 1: Sum from transactions table
-                const { data: transactions } = await supabase
-                    .from('transactions')
-                    .select('amount')
-                    .eq('transaction_type', 'EARN');
+            // Fetch total coins awarded
+            const { data: transactions } = await supabase
+                .from('transactions')
+                .select('amount')
+                .eq('transaction_type', 'EARN');
 
-                if (transactions && transactions.length > 0) {
-                    totalCoins = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-                }
-            } catch (err) {
-                console.log('Transactions query failed:', err.message);
-            }
-
-            // Method 2: If transactions empty, try summing user coins as fallback
-            if (totalCoins === 0) {
-                try {
-                    const { data: users } = await supabase
-                        .from('users')
-                        .select('coins')
-                        .gte('coins', 0);
-
-                    if (users && users.length > 0) {
-                        totalCoins = users.reduce((sum, user) => sum + (user.coins || 0), 0);
-                    }
-                } catch (err) {
-                    console.log('User coins query failed:', err.message);
-                }
-            }
-
-            // Method 3: If still 0, show a reasonable default
-            if (totalCoins === 0) {
-                totalCoins = 1250; // Default fallback value
-            }
-
-            // Format stats for display
-            const formatStat = (value) => {
-                // If it's already a string with K, return as is
-                if (typeof value === 'string' && value.includes('K')) {
-                    return value;
-                }
-                
-                // If it's a number, format it
-                const numValue = typeof value === 'number' ? value : parseInt(value) || 0;
-                if (numValue >= 1000) {
-                    return Math.floor(numValue / 1000) + 'K+';
-                }
-                return numValue.toString();
-            };
+            const totalCoins = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
 
             // Update stats with real data
             setStats(prev => prev.map((stat, index) => {
                 switch (index) {
-                    case 0: return { ...stat, value: formatStat(studentCount || 0) };
-                    case 1: return { ...stat, value: formatStat(materialCount || 0) };
-                    case 2: return { ...stat, value: formatStat(eventCount || 0) };
-                    case 3: return { ...stat, value: formatStat(totalCoins) };
+                    case 0: return { ...stat, value: studentCount || 0 };
+                    case 1: return { ...stat, value: materialCount || 0 };
+                    case 2: return { ...stat, value: eventCount || 0 };
+                    case 3: return { ...stat, value: totalCoins };
                     default: return stat;
                 }
             }));

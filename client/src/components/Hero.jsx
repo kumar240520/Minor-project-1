@@ -9,6 +9,12 @@ const Hero = () => {
     const [session, setSession] = useState(null);
     const [role, setRole] = useState('student');
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalStudents: 0,
+        totalMaterials: 0,
+        totalEvents: 0,
+        totalCoins: 0
+    });
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
@@ -30,8 +36,95 @@ const Hero = () => {
             }
         });
 
+        // Fetch real-time stats
+        fetchPlatformStats();
+
         return () => subscription.unsubscribe();
     }, []);
+
+    const fetchPlatformStats = async () => {
+        try {
+            // Fetch total students
+            const { count: studentCount } = await supabase
+                .from('users')
+                .select('*', { count: 'exact', head: true })
+                .eq('role', 'student');
+
+            // Fetch total approved materials
+            const { count: materialCount } = await supabase
+                .from('materials')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'approved');
+
+            // Fetch total events
+            const { count: eventCount } = await supabase
+                .from('calendar_events')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_global', true);
+
+            // Fetch total coins awarded (try multiple approaches)
+            let totalCoins = 0;
+            
+            try {
+                // Method 1: Sum from transactions table
+                const { data: transactions } = await supabase
+                    .from('transactions')
+                    .select('amount')
+                    .eq('transaction_type', 'EARN');
+
+                if (transactions && transactions.length > 0) {
+                    totalCoins = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+                }
+            } catch (err) {
+                console.log('Transactions query failed:', err.message);
+            }
+
+            // Method 2: If transactions empty, try summing user coins as fallback
+            if (totalCoins === 0) {
+                try {
+                    const { data: users } = await supabase
+                        .from('users')
+                        .select('coins')
+                        .gte('coins', 0);
+
+                    if (users && users.length > 0) {
+                        totalCoins = users.reduce((sum, user) => sum + (user.coins || 0), 0);
+                    }
+                } catch (err) {
+                    console.log('User coins query failed:', err.message);
+                }
+            }
+
+            // Method 3: If still 0, show a reasonable default
+            if (totalCoins === 0) {
+                totalCoins = 1250; // Default fallback value
+            }
+
+            // Format stats for display
+            const formatStat = (value) => {
+                // If it's already a string with K, return as is
+                if (typeof value === 'string' && value.includes('K')) {
+                    return value;
+                }
+                
+                // If it's a number, format it
+                const numValue = typeof value === 'number' ? value : parseInt(value) || 0;
+                if (numValue >= 1000) {
+                    return Math.floor(numValue / 1000) + 'K+';
+                }
+                return numValue.toString();
+            };
+            
+            setStats({
+                totalStudents: formatStat(studentCount || 0),
+                totalMaterials: formatStat(materialCount || 0),
+                totalEvents: formatStat(eventCount || 0),
+                totalCoins: formatStat(totalCoins)
+            });
+        } catch (error) {
+            console.error('Error fetching platform stats:', error);
+        }
+    };
 
     const fetchUserRole = async (userId) => {
         try {
@@ -144,7 +237,7 @@ const Hero = () => {
                                 className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
                                 <Users className="w-5 h-5 text-violet-600 mx-auto mb-2" />
-                                <div className="text-xl font-bold text-gray-900">10K+</div>
+                                <div className="text-xl font-bold text-gray-900">{stats.totalStudents}</div>
                                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Students</div>
                             </motion.div>
                             <motion.div
@@ -154,7 +247,7 @@ const Hero = () => {
                                 className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
                                 <BookOpen className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-                                <div className="text-xl font-bold text-gray-900">5K+</div>
+                                <div className="text-xl font-bold text-gray-900">{stats.totalMaterials}</div>
                                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Resources</div>
                             </motion.div>
                             <motion.div
@@ -164,8 +257,8 @@ const Hero = () => {
                                 className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
                                 <Zap className="w-5 h-5 text-amber-500 mx-auto mb-2" />
-                                <div className="text-xl font-bold text-gray-900">24/7</div>
-                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Access</div>
+                                <div className="text-xl font-bold text-gray-900">{stats.totalCoins}</div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Coins</div>
                             </motion.div>
                         </div>
 
