@@ -16,12 +16,12 @@ const ForgotPassword = () => {
     const baseUrl = window.location.origin;
     
     if (isDevelopment) {
-        // Development uses localhost with current port
-        return `${baseUrl}/reset-password`;
+        // Development uses localhost with current port - go through auth callback
+        return `${baseUrl}/auth/callback`;
     }
     
-    // Production uses hiteshkumar24.in
-    return 'https://hiteshkumar24.in/reset-password';
+    // Production uses hiteshkumar24.in - go through auth callback
+    return 'https://hiteshkumar24.in/auth/callback';
 };
 
 const handleSubmit = async (e) => {
@@ -31,15 +31,28 @@ const handleSubmit = async (e) => {
         setIsSubmitting(true);
 
         try {
-            const { data, error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: getResetRedirectUrl()
+            // Use the same OTP system as login for password reset
+            const { error } = await supabase.auth.signInWithOtp({
+                email: email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/reset-password-otp`,
+                    shouldCreateUser: false,
+                    data: {
+                        isPasswordReset: true
+                    }
+                }
             });
 
-            if (resetError) {
-                throw resetError;
+            if (error) {
+                throw error;
             }
 
             setSuccess(true);
+            
+            // Auto-redirect to OTP verification page after 2 seconds
+            setTimeout(() => {
+                navigate('/reset-password-otp', { state: { email } });
+            }, 2000);
         } catch (error) {
             setError(error.message || 'Failed to send password reset email. Please try again.');
         } finally {
@@ -71,8 +84,8 @@ const handleSubmit = async (e) => {
                         <h3 className="text-3xl font-extrabold text-gray-900 mb-2">Reset Password</h3>
                         <p className="text-gray-500 mb-8">
                             {!success 
-                                ? "Enter your email address and we'll send you a link to reset your password." 
-                                : "Check your email for the password reset link."
+                                ? "Enter your email address and we'll send you a verification code to reset your password." 
+                                : "Verification code sent! Redirecting you to enter the code..."
                             }
                         </p>
 
@@ -83,22 +96,20 @@ const handleSubmit = async (e) => {
                                 </div>
                                 <div className="text-center space-y-2">
                                     <p className="text-green-600 font-medium">
-                                        Password reset email sent!
+                                        Verification code sent!
                                     </p>
                                     <p className="text-gray-600 text-sm">
-                                        We've sent a password reset link to <strong>{email}</strong>
+                                        We've sent an 8-digit verification code to <strong>{email}</strong>
                                     </p>
                                     <p className="text-gray-500 text-xs">
-                                        Didn't receive the email? Check your spam folder or try again.
+                                        Redirecting you to enter the code...
                                     </p>
                                 </div>
                                 <div className="space-y-3 w-full mt-6">
-                                    <button
-                                        onClick={() => setSuccess(false)}
-                                        className="w-full flex justify-center items-center py-3 px-4 border-2 border-gray-200 rounded-xl shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                                    >
-                                        Send Again
-                                    </button>
+                                    <div className="text-center text-sm text-gray-500">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-600 mx-auto mb-2"></div>
+                                        Redirecting automatically...
+                                    </div>
                                     <Link
                                         to="/login"
                                         className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
@@ -138,7 +149,7 @@ const handleSubmit = async (e) => {
                                     disabled={isSubmitting}
                                     className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                                 >
-                                    {isSubmitting ? 'Sending Reset Link...' : 'Send Reset Link'}
+                                    {isSubmitting ? 'Sending Reset Code...' : 'Send Reset Code'}
                                 </button>
                             </form>
                         )}

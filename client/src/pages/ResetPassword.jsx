@@ -21,13 +21,18 @@ const ResetPassword = () => {
             const accessToken = searchParams.get('access_token');
             const refreshToken = searchParams.get('refresh_token');
 
+            console.log('ResetPassword - URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
+            console.log('ResetPassword - Full URL:', window.location.href);
+
             if (!accessToken || !refreshToken) {
+                console.log('ResetPassword - Missing tokens');
                 setIsValidToken(false);
                 setError('Invalid or expired password reset link. Please request a new one.');
                 return;
             }
 
             try {
+                console.log('ResetPassword - Attempting to set session with tokens');
                 // Try to set the session with the provided tokens
                 const { data, error: sessionError } = await supabase.auth.setSession({
                     access_token: accessToken,
@@ -35,19 +40,24 @@ const ResetPassword = () => {
                 });
 
                 if (sessionError) {
+                    console.error('ResetPassword - Session error:', sessionError);
                     throw sessionError;
                 }
+
+                console.log('ResetPassword - Session set successfully:', data);
 
                 // Verify we have a valid user session
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 
                 if (userError || !user) {
+                    console.error('ResetPassword - User error:', userError);
                     throw new Error('Invalid session');
                 }
 
+                console.log('ResetPassword - User validated:', user.email);
                 setIsValidToken(true);
             } catch (error) {
-                console.error('Reset token validation error:', error);
+                console.error('ResetPassword - Reset token validation error:', error);
                 setIsValidToken(false);
                 setError('Invalid or expired password reset link. Please request a new one.');
             }

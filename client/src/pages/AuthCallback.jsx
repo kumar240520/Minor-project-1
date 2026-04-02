@@ -21,6 +21,73 @@ const AuthCallback = () => {
             return;
         }
 
+        console.log('AuthCallback - Full URL:', window.location.href);
+        console.log('AuthCallback - Search params:', Object.fromEntries(searchParams.entries()));
+
+        // Check if this is a password reset flow from Supabase verification
+        const type = searchParams.get('type');
+        
+        if (type === 'recovery') {
+            console.log('AuthCallback - Detected password recovery type');
+            
+            // Wait for Supabase to process the session, then extract tokens
+            const handleRecovery = async () => {
+                try {
+                    // Get the current session after Supabase processes the recovery
+                    const { data: { session }, error } = await supabase.auth.getSession();
+                    
+                    if (error) {
+                        console.error('AuthCallback - Session error after recovery:', error);
+                        throw error;
+                    }
+                    
+                    if (session && session.access_token && session.refresh_token) {
+                        console.log('AuthCallback - Got session tokens, redirecting to reset password');
+                        if (mounted) {
+                            window.location.href = `/reset-password?access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}`;
+                        }
+                    } else {
+                        console.log('AuthCallback - No session found, waiting for auth state change');
+                        
+                        // Listen for auth state change
+                        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+                            console.log('AuthCallback - Auth state change:', event, !!currentSession);
+                            
+                            if (event === 'SIGNED_IN' && currentSession && currentSession.access_token) {
+                                subscription.unsubscribe();
+                                if (mounted) {
+                                    window.location.href = `/reset-password?access_token=${encodeURIComponent(currentSession.access_token)}&refresh_token=${encodeURIComponent(currentSession.refresh_token)}`;
+                                }
+                            } else if (event === 'PASSWORD_RECOVERY') {
+                                subscription.unsubscribe();
+                                if (mounted) {
+                                    window.location.href = `/reset-password?access_token=${encodeURIComponent(currentSession.access_token)}&refresh_token=${encodeURIComponent(currentSession.refresh_token)}`;
+                                }
+                            }
+                        });
+                        
+                        // Fallback timeout
+                        setTimeout(() => {
+                            if (mounted) {
+                                subscription.unsubscribe();
+                                console.error('AuthCallback - Recovery timeout, redirecting to login');
+                                navigate('/login', { state: { error: 'Password reset session expired. Please try again.' }, replace: true });
+                            }
+                        }, 10000);
+                    }
+                } catch (error) {
+                    console.error('AuthCallback - Recovery handling error:', error);
+                    if (mounted) {
+                        navigate('/login', { state: { error: 'Failed to process password reset. Please try again.' }, replace: true });
+                    }
+                }
+            };
+            
+            // Small delay to let Supabase process the URL
+            setTimeout(handleRecovery, 1000);
+            return;
+        }
+
         const handleSession = async () => {
             try {
                 // Supabase v2 automatically processes the ?code parameter when detectSessionInUrl is true.

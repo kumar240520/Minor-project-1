@@ -18,6 +18,7 @@ const EmailVerification = lazy(() => import('./pages/EmailVerification'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const ResetPasswordOTP = lazy(() => import('./pages/ResetPasswordOTP'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PYQ = lazy(() => import('./pages/PYQ'));
 const PlacementMaterials = lazy(() => import('./pages/PlacementMaterials'));
@@ -76,6 +77,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-password-otp" element={<ResetPasswordOTP />} />
             <Route path="/email-verification" element={<EmailVerification />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
 
