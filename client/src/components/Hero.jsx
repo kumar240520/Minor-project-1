@@ -237,7 +237,7 @@ const Hero = () => {
                                 className="text-center p-4 bg-white shadow-xl rounded-2xl border border-gray-100"
                             >
                                 <Users className="w-5 h-5 text-violet-600 mx-auto mb-2" />
-                                <div className="text-xl font-bold text-gray-900">{stats.totalStudents}</div>
+                                <div className="text-xl font-bold text-gray-900">{stats.totalStudents}+</div>
                                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Students</div>
                             </motion.div>
                             <motion.div
