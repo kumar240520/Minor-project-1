@@ -224,7 +224,7 @@ const StatsAndCTA = () => {
                             <Zap className="w-4 h-4" />
                         </div>
                         <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-                            Trusted by <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Thousands</span> of Students
+                            Trusted by <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Hundred</span> of Students
                         </h2>
                         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                             Join a thriving community of learners sharing knowledge and achieving academic excellence together.
