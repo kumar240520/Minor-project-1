@@ -13,7 +13,8 @@ import {
     BarChart3,
     LogOut,
     HelpCircle,
-    Bell
+    Bell,
+    Mail
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -34,6 +35,7 @@ const AdminSidebar = () => {
         { path: `${adminBasePath}/events`, label: 'Events', icon: CalendarDays },
         { path: `${adminBasePath}/tickets`, label: 'Support Tickets', icon: HelpCircle },
         { path: `${adminBasePath}/analytics`, label: 'Analytics', icon: BarChart3 },
+        { path: `${adminBasePath}/bulk-email`, label: 'Bulk Email', icon: Mail },
     ];
 
     const handleLogout = async () => {

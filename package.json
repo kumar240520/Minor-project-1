@@ -4,6 +4,7 @@
   "description": "EduSure - Educational Platform",
   "scripts": {
     "dev": "npm --prefix client run dev",
+    "dev:all": "concurrently --names \"CLIENT,SERVER\" --prefix-colors \"cyan,yellow\" \"npm --prefix client run dev\" \"npm --prefix server run dev\"",
     "client": "npm --prefix client run dev",
     "server": "npm --prefix server run dev",
     "build": "npm --prefix client run build",
@@ -18,5 +19,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

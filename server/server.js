@@ -31,9 +31,20 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Test Admin Endpoint
+app.get('/api/admin/test', (req, res) => {
+    console.log('Test endpoint hit!');
+    res.json({ 
+        message: 'Admin test endpoint working',
+        time: new Date().toISOString()
+    });
+});
+
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

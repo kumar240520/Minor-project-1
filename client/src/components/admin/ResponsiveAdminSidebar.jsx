@@ -16,7 +16,8 @@ import {
     HelpCircle,
     Menu,
     X,
-    MessageSquare
+    MessageSquare,
+    Mail
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -38,6 +39,7 @@ const ResponsiveAdminSidebar = () => {
         { path: `${adminBasePath}/committee-posts`, label: 'Committee Posts', icon: MessageSquare },
         { path: `${adminBasePath}/tickets`, label: 'Support Tickets', icon: HelpCircle },
         { path: `${adminBasePath}/analytics`, label: 'Analytics', icon: BarChart3 },
+        { path: `${adminBasePath}/bulk-email`, label: 'Bulk Email', icon: Mail },
     ];
 
     const handleLogout = async () => {
