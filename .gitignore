@@ -13,6 +13,33 @@ client/dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
+
+# Security: Keys and secrets
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+config/secrets.json
+private/
+*.secret
+
+# Supabase specific
+supabase/.env.local
+supabase/functions/.env
+
+# Database credentials
+database.sql.backup
+*.db
+*.sqlite
+*.sqlite3
+
+# API keys and tokens
+api-keys.txt
+tokens.json
+auth-config.json
 
 # Logs
 npm-debug.log*
