@@ -13,7 +13,7 @@ const getAuthRedirectUrl = () => {
         return `${baseUrl}/auth/callback`;
     }
     
-    return 'https://hiteshkumar24.in/auth/callback';
+    return 'https://edusure-five.vercel.app/auth/callback';
 };
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {

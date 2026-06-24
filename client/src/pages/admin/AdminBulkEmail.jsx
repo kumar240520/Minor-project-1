@@ -27,6 +27,15 @@ const AdminBulkEmail = () => {
     const [showTemplateModal, setShowTemplateModal] = useState(false);
     const [newTemplateForm, setNewTemplateForm] = useState({ name: '', subject: '', content: '' });
 
+    const getApiBase = () => {
+        const configuredBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
+        // Ignore placeholder URLs that were never configured
+        if (configuredBase.includes('your-backend-server') || configuredBase.includes('your-server-url')) {
+            return '';
+        }
+        return configuredBase.replace(/\/api\/?$/, '').replace(/\/$/, '');
+    };
+
     useEffect(() => {
         fetchUsers();
         fetchTemplates();
@@ -190,7 +199,7 @@ const AdminBulkEmail = () => {
                     throw new Error('No authentication token available');
                 }
 
-                const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                const API_BASE = getApiBase();
                 const requestBody = {
                     campaignId: campaign.id,
                     recipients: emails,
@@ -219,7 +228,7 @@ const AdminBulkEmail = () => {
                     try {
                         const responseClone = response.clone();
                         errorData = await responseClone.json();
-                    } catch (jsonError) {
+                    } catch {
                         // If response is not JSON, get text instead
                         const responseClone = response.clone();
                         const errorText = await responseClone.text();
@@ -233,7 +242,7 @@ const AdminBulkEmail = () => {
                 try {
                     const responseClone = response.clone();
                     responseData = await responseClone.json();
-                } catch (jsonError) {
+                } catch {
                     // If response is not JSON, create a default success response
                     responseData = { success: true, message: 'Batch processed' };
                 }
@@ -310,10 +319,6 @@ const AdminBulkEmail = () => {
 
         setDisplayedUsers(filtered);
     }, [users, targetAudience, searchTerm]); // Remove selectedUsers from dependencies
-
-    const filteredUsers = targetAudience === 'custom' 
-        ? displayedUsers.filter(user => selectedUsers.includes(user.id))
-        : displayedUsers;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">

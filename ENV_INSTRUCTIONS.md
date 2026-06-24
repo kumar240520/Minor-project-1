@@ -29,6 +29,30 @@ VITE_SUPABASE_PUBLIC_KEY=sb_publishable_riQhamrU4Pwjay2fdMMkmw_ymryt0zi
 VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
+### 3. SMTP variables for bulk email
+Add these to the root `.env` or `server/.env` file:
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your-gmail-address@gmail.com
+SMTP_PASS=your-google-app-password
+EMAIL_FROM=EduSure <your-gmail-address@gmail.com>
+```
+
+### 4. Supabase Auth URL allowlist
+In Supabase Dashboard > Authentication > URL Configuration, set:
+```bash
+Site URL=https://edusure-five.vercel.app
+```
+
+Add these Redirect URLs:
+```bash
+https://edusure-five.vercel.app/auth/callback
+https://edusure-five.vercel.app/reset-password-otp
+http://localhost:5173/auth/callback
+http://localhost:5173/reset-password-otp
+```
+
 ## How to create:
 1. Copy the content above
 2. Create `.env` file in project root

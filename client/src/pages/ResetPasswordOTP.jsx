@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Lock, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle, Shield, Clock, RefreshCw, Loader2 } from 'lucide-react';
@@ -19,7 +19,6 @@ const ResetPasswordOTP = () => {
     const [successMsg, setSuccessMsg] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentStep, setCurrentStep] = useState('otp'); // 'otp' | 'password'
-    const [isOTPVerified, setIsOTPVerified] = useState(false);
     const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
     const [isSendingOTP, setIsSendingOTP] = useState(false);
     
@@ -36,7 +35,6 @@ const ResetPasswordOTP = () => {
         getOtpString,
         isOtpComplete,
         startTimer,
-        allowResend
     } = useOTP();
 
     // Verify OTP
@@ -47,7 +45,7 @@ const ResetPasswordOTP = () => {
         setIsVerifyingOTP(true);
 
         if (!isOtpComplete()) {
-            setError('Please enter all 8 digits of the OTP.');
+            setError(`Please enter all ${otp.length} digits of the OTP.`);
             setIsVerifyingOTP(false);
             return;
         }
@@ -56,7 +54,7 @@ const ResetPasswordOTP = () => {
             const enteredOTP = getOtpString();
             
             // Verify the OTP with Supabase
-            const { data, error } = await supabase.auth.verifyOtp({
+            const { error } = await supabase.auth.verifyOtp({
                 email: email,
                 token: enteredOTP,
                 type: 'email'
@@ -67,7 +65,6 @@ const ResetPasswordOTP = () => {
             }
 
             setSuccessMsg('OTP verified! Please set your new password.');
-            setIsOTPVerified(true);
             setCurrentStep('password');
         } catch (err) {
             console.error('Verify OTP Error:', err);
@@ -141,7 +138,7 @@ const ResetPasswordOTP = () => {
         }
 
         try {
-            const { data, error: updateError } = await supabase.auth.updateUser({
+            const { error: updateError } = await supabase.auth.updateUser({
                 password: password
             });
 
@@ -208,7 +205,7 @@ const ResetPasswordOTP = () => {
                         </h3>
                         <p className="text-gray-500 mb-8">
                             {currentStep === 'otp' 
-                                ? `Enter the 8-digit code sent to ${email}`
+                                ? `Enter the ${otp.length}-digit code sent to ${email}`
                                 : 'Create your new password below'
                             }
                         </p>
@@ -232,7 +229,7 @@ const ResetPasswordOTP = () => {
                             <form onSubmit={handleVerifyOTP} className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
-                                        Enter 8-digit code
+                                        Enter {otp.length}-digit code
                                     </label>
                                     <OTPInput
                                         otp={otp}

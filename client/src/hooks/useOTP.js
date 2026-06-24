@@ -1,25 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
 
+export const OTP_LENGTH = 6;
+const createEmptyOtp = () => Array(OTP_LENGTH).fill('');
+
 export const useOTP = () => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '', '', '']);
+  const [otp, setOtp] = useState(createEmptyOtp);
   const [timer, setTimer] = useState(30);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [canResend, setCanResend] = useState(false);
 
   // Timer countdown effect
   useEffect(() => {
-    let interval;
-    if (isTimerActive && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prevTimer) => prevTimer - 1);
-      }, 1000);
-    } else if (timer === 0) {
-      setIsTimerActive(false);
-      setCanResend(true);
+    if (!isTimerActive) {
+      return undefined;
     }
 
+    const interval = setInterval(() => {
+      setTimer((prevTimer) => {
+        if (prevTimer <= 1) {
+          setIsTimerActive(false);
+          setCanResend(true);
+          return 0;
+        }
+
+        return prevTimer - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, [isTimerActive, timer]);
+  }, [isTimerActive]);
 
   // Start timer
   const startTimer = useCallback(() => {
@@ -51,15 +60,15 @@ export const useOTP = () => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').trim();
     
-    // Only allow numbers and max 8 digits
-    const numericData = pastedData.replace(/\D/g, '').slice(0, 8);
+    // Only allow numbers and max configured OTP length
+    const numericData = pastedData.replace(/\D/g, '').slice(0, OTP_LENGTH);
     
-    if (numericData.length === 8) {
+    if (numericData.length === OTP_LENGTH) {
       const newOtp = numericData.split('');
       setOtp(newOtp);
       
       // Focus on the last input
-      const lastInput = document.getElementById('otp-7');
+      const lastInput = document.getElementById(`otp-${OTP_LENGTH - 1}`);
       if (lastInput) {
         lastInput.focus();
       }
@@ -68,7 +77,7 @@ export const useOTP = () => {
 
   // Clear OTP
   const clearOtp = useCallback(() => {
-    setOtp(['', '', '', '', '', '', '', '']);
+    setOtp(createEmptyOtp());
   }, []);
 
   // Get OTP as string

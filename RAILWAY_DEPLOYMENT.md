@@ -10,6 +10,7 @@
 ### 2. Configure Environment Variables
 In Railway Dashboard → Your Project → Variables, add:
 
+#### Client-side Variables (Frontend)
 ```env
 VITE_SUPABASE_URL=https://acobfukuvqrehbrqnyxx.supabase.co
 VITE_SUPABASE_PUBLIC_KEY=sb_publishable_riQhamrU4Pwjay2fdMMkmw_ymryt0zi
@@ -17,6 +18,19 @@ VITE_API_BASE_URL=${RAILWAY_PUBLIC_DOMAIN}/api
 VITE_ENVIRONMENT=production
 VITE_PLATFORM=railway
 ```
+
+#### Server-side Variables (Backend - required for Bulk Email & Auth)
+```env
+SUPABASE_URL=https://acobfukuvqrehbrqnyxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key (the JWT key, not sb_secret)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=edusure24@gmail.com
+SMTP_PASS=your_gmail_app_password
+EMAIL_FROM="EduSure" <edusure24@gmail.com>
+PORT=5000
+```
+
 
 ### 3. Update Supabase Settings
 In Supabase Dashboard → Authentication → Settings:

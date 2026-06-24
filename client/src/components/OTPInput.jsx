@@ -24,7 +24,7 @@ const OTPInput = ({
     onChange(numericValue.slice(-1), index); // Take only last character
 
     // Auto-focus next input
-    if (numericValue && index < 7) {
+    if (numericValue && index < otp.length - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -34,7 +34,7 @@ const OTPInput = ({
     onKeyDown(e, index);
     
     // Move to next input on arrow right
-    if (e.key === 'ArrowRight' && index < 7) {
+    if (e.key === 'ArrowRight' && index < otp.length - 1) {
       inputRefs.current[index + 1]?.focus();
     }
     

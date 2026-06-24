@@ -6,6 +6,8 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const OTP_LENGTH = 6;
+
 // @desc    Trigger Supabase Auth OTP
 // @route   POST /api/auth/send-otp
 // @access  Public
@@ -38,7 +40,7 @@ exports.sendOTP = async (req, res) => {
         res.status(200).json({
             success: true,
             message: 'OTP sent successfully via Supabase! Please check your email.',
-            note: 'The OTP should be 8 digits. If you receive a different length, please check Supabase project settings.'
+            note: `The OTP should be ${OTP_LENGTH} digits. If you receive a different length, update Supabase Auth OTP settings to match.`
         });
     } catch (error) {
         console.error('Send OTP Error:', error);
@@ -51,17 +53,19 @@ exports.sendOTP = async (req, res) => {
 // @access  Public
 exports.verifyOTP = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { email } = req.body;
+        const otp = req.body.otp || req.body.otpCode;
+        const otpLength = OTP_LENGTH;
 
         if (!email || !otp) {
             return res.status(400).json({ success: false, message: 'Email and OTP are required' });
         }
 
-        // Validate OTP length - should be exactly 8 digits
-        if (!/^\d{8}$/.test(otp)) {
+        // Validate OTP length to match Supabase project settings.
+        if (!new RegExp(`^\\d{${otpLength}}$`).test(otp)) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Invalid OTP format. OTP must be exactly 8 digits.' 
+                message: `Invalid OTP format. OTP must be exactly ${otpLength} digits.` 
             });
         }
 

@@ -46,7 +46,7 @@ const handleGoogleSignUp = async () => {
         setIsGoogleLoading(true);
 
         try {
-            const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+            const { error: googleError } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`
@@ -79,7 +79,7 @@ const handleGoogleSignUp = async () => {
         
         try {
             // Create user with password using signUp, then send OTP for verification
-            const { data, error: signUpError } = await supabase.auth.signUp({
+            const { error: signUpError } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
@@ -115,7 +115,7 @@ const handleGoogleSignUp = async () => {
         setIsVerifyingOTP(true);
 
         if (!isOtpComplete()) {
-            setError('Please enter all 8 digits of the OTP.');
+            setError(`Please enter all ${otp.length} digits of the OTP.`);
             setIsVerifyingOTP(false);
             return;
         }
@@ -289,7 +289,7 @@ const handleGoogleSignUp = async () => {
                         <p className="text-gray-500 mb-8">
                             {currentStep === 'form' 
                                 ? 'Sign up to get started with EduSure.' 
-                                : `Enter the 8-digit code sent to ${pendingUserData?.email || email}`
+                                : `Enter the ${otp.length}-digit code sent to ${pendingUserData?.email || email}`
                             }
                         </p>
 
@@ -388,7 +388,7 @@ const handleGoogleSignUp = async () => {
                             <form onSubmit={handleVerifyOTP} className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
-                                        Enter 8-digit code
+                                        Enter {otp.length}-digit code
                                     </label>
                                     <OTPInput
                                         otp={otp}

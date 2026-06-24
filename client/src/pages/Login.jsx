@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Mail, Lock, LogIn, ArrowLeft, Shield, Clock, RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
+import { ensureStudentProfile, getAuthenticatedUser, getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
 import { useOTP } from '../hooks/useOTP';
 import OTPInput from '../components/OTPInput';
 
@@ -38,7 +38,6 @@ const Login = () => {
         getOtpString,
         isOtpComplete,
         startTimer,
-        allowResend
     } = useOTP();
 
 
@@ -99,7 +98,7 @@ const Login = () => {
         setIsVerifyingOTP(true);
 
         if (!isOtpComplete()) {
-            setError('Please enter all 8 digits of the OTP.');
+            setError(`Please enter all ${otp.length} digits of the OTP.`);
             setIsVerifyingOTP(false);
             return;
         }
@@ -232,7 +231,7 @@ const Login = () => {
         setIsGoogleLoading(true);
 
         try {
-            const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+            const { error: googleError } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`
@@ -406,7 +405,7 @@ const Login = () => {
                         <p className="text-gray-500 mb-8">
                             {loginMethod === 'otp' 
                                 ? (currentStep === 'email' ? 'Enter your email to receive a one-time password' : 
-                                   currentStep === 'otp' ? 'Enter the 8-digit code sent to your email' :
+                                   currentStep === 'otp' ? `Enter the ${otp.length}-digit code sent to your email` :
                                    'Enter your password to complete login')
                                 : 'Please enter your credentials to continue.'
                             }
@@ -476,7 +475,7 @@ const Login = () => {
                             <form onSubmit={handleVerifyOTP} className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
-                                        Enter 8-digit code
+                                        Enter {otp.length}-digit code
                                     </label>
                                     <OTPInput
                                         otp={otp}

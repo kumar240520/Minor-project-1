@@ -30,7 +30,7 @@ exports.sendBulkEmail = async (req, res) => {
     try {
         const { campaignId, recipients, subject, content } = req.body;
  
-        if (!campaignId || !recipients || !subject || !content) {
+        if (!campaignId || !Array.isArray(recipients) || recipients.length === 0 || !subject || !content) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields: campaignId, recipients, subject, content'
@@ -48,9 +48,11 @@ exports.sendBulkEmail = async (req, res) => {
         }
  
         const token = authHeader.split(' ')[1];
-        const { data: { user }, authError } = await supabase.auth.getUser(token);
+        const { data, error: authError } = await supabase.auth.getUser(token);
+        const user = data?.user;
         
         if (authError || !user) {
+            console.error('[AUTH ERROR] Bulk email verification failed:', authError?.message || authError || 'No user found');
             return res.status(401).json({
                 success: false,
                 message: 'Unauthorized: Invalid token'
@@ -255,9 +257,11 @@ exports.getEmailCampaigns = async (req, res) => {
         }
  
         const token = authHeader.split(' ')[1];
-        const { data: { user }, error: campaignsAuthError } = await supabase.auth.getUser(token);
+        const { data, error: campaignsAuthError } = await supabase.auth.getUser(token);
+        const user = data?.user;
         
         if (campaignsAuthError || !user) {
+            console.error('[AUTH ERROR] Campaigns fetch verification failed:', campaignsAuthError?.message || campaignsAuthError || 'No user found');
             return res.status(401).json({
                 success: false,
                 message: 'Unauthorized: Invalid token'
@@ -317,9 +321,11 @@ exports.getEmailAnalytics = async (req, res) => {
         }
  
         const token = authHeader.split(' ')[1];
-        const { data: { user }, error: analyticsAuthError } = await supabase.auth.getUser(token);
+        const { data, error: analyticsAuthError } = await supabase.auth.getUser(token);
+        const user = data?.user;
         
         if (analyticsAuthError || !user) {
+            console.error('[AUTH ERROR] Analytics fetch verification failed:', analyticsAuthError?.message || analyticsAuthError || 'No user found');
             return res.status(401).json({
                 success: false,
                 message: 'Unauthorized: Invalid token'
@@ -392,9 +398,11 @@ exports.getUsersList = async (req, res) => {
         }
  
         const token = authHeader.split(' ')[1];
-        const { data: { user }, error: usersAuthError } = await supabase.auth.getUser(token);
+        const { data, error: usersAuthError } = await supabase.auth.getUser(token);
+        const user = data?.user;
         
         if (usersAuthError || !user) {
+            console.error('[AUTH ERROR] Users list fetch verification failed:', usersAuthError?.message || usersAuthError || 'No user found');
             return res.status(401).json({
                 success: false,
                 message: 'Unauthorized: Invalid token'

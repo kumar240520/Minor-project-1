@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { OTP_LENGTH } from '../hooks/useOTP';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -10,19 +11,6 @@ const ForgotPassword = () => {
     const [success, setSuccess] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
-
-    const getResetRedirectUrl = () => {
-    const isDevelopment = import.meta.env.DEV;
-    const baseUrl = window.location.origin;
-    
-    if (isDevelopment) {
-        // Development uses localhost with current port - go through auth callback
-        return `${baseUrl}/auth/callback`;
-    }
-    
-    // Production uses hiteshkumar24.in - go through auth callback
-    return 'https://hiteshkumar24.in/auth/callback';
-};
 
 const handleSubmit = async (e) => {
         e.preventDefault();
@@ -99,7 +87,7 @@ const handleSubmit = async (e) => {
                                         Verification code sent!
                                     </p>
                                     <p className="text-gray-600 text-sm">
-                                        We've sent an 8-digit verification code to <strong>{email}</strong>
+                                        We've sent a {OTP_LENGTH}-digit verification code to <strong>{email}</strong>
                                     </p>
                                     <p className="text-gray-500 text-xs">
                                         Redirecting you to enter the code...

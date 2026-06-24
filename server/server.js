@@ -1,5 +1,12 @@
+const path = require('path');
+
 require('dotenv').config({ 
-    path: require('path').resolve(__dirname, '../.env'),
+    path: path.resolve(__dirname, '../.env'),
+    silent: true 
+});
+
+require('dotenv').config({ 
+    path: path.resolve(__dirname, './.env'),
     silent: true 
 });
 
@@ -61,7 +68,12 @@ process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-});
+// Export app for Vercel serverless usage
+module.exports = app;
+
+// Only start listening when run directly (not imported as a module by Vercel)
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server is running on port ${PORT}`);
+    });
+}
