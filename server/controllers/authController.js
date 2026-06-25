@@ -1,10 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-// Initialize Supabase client
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const { supabase, isSupabaseConfigured, getSupabaseConfigError } = require('../supabaseClient');
 
 const OTP_LENGTH = 6;
 
@@ -17,6 +11,13 @@ exports.sendOTP = async (req, res) => {
 
         if (!email) {
             return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        if (!isSupabaseConfigured()) {
+            return res.status(500).json({
+                success: false,
+                message: getSupabaseConfigError()
+            });
         }
 
         // Use Supabase built-in OTP functionality
@@ -59,6 +60,13 @@ exports.verifyOTP = async (req, res) => {
 
         if (!email || !otp) {
             return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+        }
+
+        if (!isSupabaseConfigured()) {
+            return res.status(500).json({
+                success: false,
+                message: getSupabaseConfigError()
+            });
         }
 
         // Validate OTP length to match Supabase project settings.

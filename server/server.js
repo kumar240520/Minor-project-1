@@ -12,6 +12,7 @@ require('dotenv').config({
 
 const express = require('express');
 const cors = require('cors');
+const { getSupabaseConfigError, isSupabaseConfigured } = require('./supabaseClient');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,7 +35,12 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'UP', 
         time: new Date().toISOString(),
-        env: process.env.NODE_ENV 
+        env: process.env.NODE_ENV,
+        config: {
+            supabase: isSupabaseConfigured(),
+            smtp: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
+            supabaseMessage: getSupabaseConfigError()
+        }
     });
 });
 
