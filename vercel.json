@@ -7,27 +7,28 @@
       "config": { "distDir": "dist" }
     },
     {
-      "src": "api/server.js",
+      "src": "server/server.js",
       "use": "@vercel/node"
     }
   ],
   "functions": {
-    "api/server.js": {
+    "server/server.js": {
+      "includeFiles": "server/**",
       "maxDuration": 60
     }
   },
   "routes": [
     {
       "src": "/api/admin/(.*)",
-      "dest": "/api/server.js"
+      "dest": "/server/server.js"
     },
     {
       "src": "/api/auth/(.*)",
-      "dest": "/api/server.js"
+      "dest": "/server/server.js"
     },
     {
       "src": "/api/health",
-      "dest": "/api/server.js"
+      "dest": "/server/server.js"
     },
     {
       "src": "/assets/(.*)",
