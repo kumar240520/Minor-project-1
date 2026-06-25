@@ -96,25 +96,16 @@ exports.sendBulkEmail = async (req, res) => {
         }
  
         // Gmail allows up to ~500/day on free tier — send in batches of 10
-        // with a 1-second gap to respect rate limits
+        // with a short gap to respect rate limits while staying within serverless timeout
         const batchSize = 10;
         const batches = [];
  
         for (let i = 0; i < recipients.length; i += batchSize) {
             batches.push(recipients.slice(i, i + batchSize));
         }
- 
-        // Debug: Log original content at every step
-        console.log('[DEBUG] === CONTENT PIPELINE DEBUG ===');
-        console.log('[DEBUG] Raw content from request:', JSON.stringify(content));
-        console.log('[DEBUG] Content type:', typeof content);
-        console.log('[DEBUG] Content length:', content?.length);
         
         // Preserve all formatting exactly as typed
         let formattedContent = content.trim();
-        
-        console.log('[DEBUG] After trim:', JSON.stringify(formattedContent));
-        console.log('[DEBUG] === END CONTENT PIPELINE DEBUG ===');
         
         // FIXED: Escape HTML entities FIRST, then use the escaped version
         const escapedContent = formattedContent
@@ -177,32 +168,37 @@ ${formattedContent}
         for (let i = 0; i < batches.length; i++) {
             const batch = batches[i];
  
-            // Real sending — send to each recipient in the batch
-            for (const recipientEmail of batch) {
-                try {
-                    await transporter.sendMail({
+            // Send all emails in the batch in parallel for speed
+            const results = await Promise.allSettled(
+                batch.map(recipientEmail =>
+                    transporter.sendMail({
                         from: fromAddress,
                         to: recipientEmail,
                         subject: subject,
                         text: plainTextVersion,
                         html: htmlTemplate
-                    });
-                    console.log(`[SMTP] ✓ Delivered to: ${recipientEmail}`);
+                    }).then(() => {
+                        console.log(`[SMTP] ✓ Delivered to: ${recipientEmail}`);
+                        return { success: true, email: recipientEmail };
+                    }).catch(mailError => {
+                        console.error(`[SMTP] ✗ Failed for ${recipientEmail}:`, mailError.message);
+                        return { success: false, email: recipientEmail, error: mailError.message };
+                    })
+                )
+            );
+ 
+            // Count successes and failures
+            for (const result of results) {
+                if (result.status === 'fulfilled' && result.value.success) {
                     sentCount++;
-                } catch (mailError) {
-                    console.error(`[SMTP] ✗ Failed for ${recipientEmail}:`, mailError.message);
-                    console.error(`[SMTP]   Code: ${mailError.responseCode || 'N/A'} | Response: ${mailError.response || 'N/A'}`);
-                    if (mailError.responseCode >= 500) {
-                        console.error('[SMTP]   → Gmail SMTP error. Make sure you are using an App Password (not your real password) and have 2FA enabled.');
-                        console.error('[SMTP]   → Fix: https://myaccount.google.com/apppasswords');
-                    }
+                } else {
                     failedCount++;
                 }
             }
  
-            // 1-second delay between batches to respect rate limits
+            // Short delay between batches to respect Gmail rate limits
             if (i < batches.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
         }
  

@@ -150,28 +150,15 @@ const AdminBulkEmail = () => {
             return;
         }
 
-        console.log('Starting bulk email send:', {
-            subject: emailData.subject,
-            selectedUsersCount: selectedUsers.length,
-            contentLength: emailData.content.length
-        });
-
         setIsSending(true);
         setSendProgress(0);
 
         try {
+            // Collect all recipient emails
             const recipients = users.filter(user => selectedUsers.includes(user.id));
-            console.log('Filtered recipients:', recipients.length);
-            
-            const batchSize = 10;
-            const batches = [];
-            
-            for (let i = 0; i < recipients.length; i += batchSize) {
-                batches.push(recipients.slice(i, i + batchSize));
-            }
+            const allEmails = recipients.map(user => user.email);
 
-            console.log('Created batches:', batches.length);
-
+            // Create campaign record
             const { data: campaign, error: campaignError } = await supabase
                 .from('email_campaigns')
                 .insert({
@@ -184,90 +171,89 @@ const AdminBulkEmail = () => {
                 .single();
 
             if (campaignError) throw campaignError;
-            console.log('Campaign created:', campaign.id);
 
-            for (let i = 0; i < batches.length; i++) {
-                const batch = batches[i];
-                const emails = batch.map(user => user.email);
-                
-                console.log(`Sending batch ${i + 1}/${batches.length} with ${emails.length} emails`);
+            // Get auth token
+            const session = await supabase.auth.getSession();
+            const token = session.data?.session?.access_token;
 
-                const session = await supabase.auth.getSession();
-                const token = session.data?.session?.access_token;
-                
-                if (!token) {
-                    throw new Error('No authentication token available');
-                }
-
-                const API_BASE = getApiBase();
-                const requestBody = {
-                    campaignId: campaign.id,
-                    recipients: emails,
-                    subject: emailData.subject,
-                    content: emailData.content
-                };
-                
-                console.log('[FRONTEND DEBUG] Sending email with content:', JSON.stringify(emailData.content));
-                console.log('[FRONTEND DEBUG] Content length:', emailData.content?.length);
-                console.log('[FRONTEND DEBUG] Content type:', typeof emailData.content);
-                console.log('[FRONTEND DEBUG] Full request body:', JSON.stringify(requestBody));
-
-                const response = await fetch(`${API_BASE}/api/admin/bulk-email`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-
-                console.log(`Batch ${i + 1} response status:`, response.status);
-
-                if (!response.ok) {
-                    let errorData;
-                    try {
-                        const responseClone = response.clone();
-                        errorData = await responseClone.json();
-                    } catch {
-                        // If response is not JSON, get text instead
-                        const responseClone = response.clone();
-                        const errorText = await responseClone.text();
-                        errorData = { message: errorText || 'Unknown server error' };
-                    }
-                    console.error('Batch error response:', errorData);
-                    throw new Error(`Failed to send email batch: ${errorData.message || 'Unknown error'}`);
-                }
-
-                let responseData;
-                try {
-                    const responseClone = response.clone();
-                    responseData = await responseClone.json();
-                } catch {
-                    // If response is not JSON, create a default success response
-                    responseData = { success: true, message: 'Batch processed' };
-                }
-                console.log(`Batch ${i + 1} success:`, responseData);
-
-                setSendProgress(Math.round(((i + 1) / batches.length * 100)));
-                
-                if (i < batches.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+            if (!token) {
+                throw new Error('No authentication token available. Please log in again.');
             }
 
+            const API_BASE = getApiBase();
+
+            // Send ALL recipients in a single API call — the server handles batching internally
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s timeout
+
+            setSendProgress(10); // Show initial progress
+
+            const response = await fetch(`${API_BASE}/api/admin/bulk-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    campaignId: campaign.id,
+                    recipients: allEmails,
+                    subject: emailData.subject,
+                    content: emailData.content
+                }),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            setSendProgress(80);
+
+            if (!response.ok) {
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch {
+                    const errorText = await response.text();
+                    errorData = { message: errorText || `Server error (${response.status})` };
+                }
+                throw new Error(errorData.message || `Server returned ${response.status}`);
+            }
+
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch {
+                responseData = { success: true, message: 'Emails processed' };
+            }
+
+            setSendProgress(100);
+
+            // Update campaign status on client side as backup
             await supabase
                 .from('email_campaigns')
                 .update({ status: 'sent', sent_at: new Date().toISOString() })
                 .eq('id', campaign.id);
 
-            alert(`Email sent successfully to ${selectedUsers.length} users!`);
+            const sentCount = responseData.data?.sentCount ?? allEmails.length;
+            const failedCount = responseData.data?.failedCount ?? 0;
+
+            if (failedCount > 0) {
+                alert(`Email campaign complete: ${sentCount} sent, ${failedCount} failed.`);
+            } else {
+                alert(`Email sent successfully to ${sentCount} recipients!`);
+            }
+
             setEmailData({ subject: '', content: '', template: '' });
             setSelectedUsers([]);
             fetchEmailHistory();
-            
+
         } catch (error) {
             console.error('Error sending bulk email:', error);
-            alert(`Failed to send email: ${error.message}`);
+
+            if (error.name === 'AbortError') {
+                alert('Request timed out. The server may still be processing emails. Check the History tab in a moment.');
+            } else {
+                alert(`Failed to send email: ${error.message}`);
+            }
         } finally {
             setIsSending(false);
             setSendProgress(0);
