@@ -39,9 +39,7 @@ const Register = () => {
         allowResend
     } = useOTP();
 
-
-
-const handleGoogleSignUp = async () => {
+    const handleGoogleSignUp = async () => {
         setError(null);
         setIsGoogleLoading(true);
 
@@ -72,7 +70,7 @@ const handleGoogleSignUp = async () => {
         setIsSubmitting(true);
         
         if (!isValidInstitutionalEmail(email)) {
-             setError('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed.');
+             setError('Only institutional emails ending in .ies@ipsacademy.org are allowed.');
              setIsSubmitting(false);
              return;
         }
@@ -339,7 +337,7 @@ const handleGoogleSignUp = async () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                            placeholder="0808...ies@ipsacademy.org"
+                                            placeholder="student.ies@ipsacademy.org"
                                         />
                                     </div>
                                 </div>

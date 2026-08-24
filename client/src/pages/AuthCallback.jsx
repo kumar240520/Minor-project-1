@@ -99,7 +99,7 @@ const AuthCallback = () => {
                 if (session) {
                     if (!isValidInstitutionalEmail(session.user.email)) {
                         await supabase.auth.signOut();
-                        throw new Error('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed');
+                        throw new Error('Only institutional emails ending in .ies@ipsacademy.org are allowed');
                     }
                     const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
                     if (mounted) navigate(getRedirectPathForRole(role), { replace: true });
@@ -111,7 +111,7 @@ const AuthCallback = () => {
                             try {
                                 if (!isValidInstitutionalEmail(currentSession.user.email)) {
                                     await supabase.auth.signOut();
-                                    throw new Error('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed');
+                                    throw new Error('Only institutional emails ending in .ies@ipsacademy.org are allowed');
                                 }
                                 const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
                                 if (mounted) navigate(getRedirectPathForRole(role), { replace: true });

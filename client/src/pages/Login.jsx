@@ -43,6 +43,10 @@ const Login = () => {
 
 
     // Send OTP
+
+
+
+    // Send OTP
     const handleSendOTP = async (e) => {
         e.preventDefault();
         setError(null);
@@ -50,7 +54,7 @@ const Login = () => {
         setIsSendingOTP(true);
 
         if (!isValidInstitutionalEmail(email)) {
-            setError('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed.');
+            setError('Only institutional emails ending in .ies@ipsacademy.org are allowed.');
             setIsSendingOTP(false);
             return;
         }
@@ -257,7 +261,7 @@ const Login = () => {
 
         if (!isValidInstitutionalEmail(email)) {
              setIsSubmitting(false);
-             setError('Only institutional emails starting with 0808 and ending in .ies@ipsacademy.org are allowed.');
+             setError('Only institutional emails ending in .ies@ipsacademy.org are allowed.');
              return;
         }
 
@@ -440,7 +444,7 @@ const Login = () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                            placeholder="0808...ies@ipsacademy.org"
+                                            placeholder="student.ies@ipsacademy.org"
                                         />
                                     </div>
                                 </div>
@@ -604,7 +608,7 @@ const Login = () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                            placeholder="0808...ies@ipsacademy.org"
+                                            placeholder="student.ies@ipsacademy.org"
                                         />
                                     </div>
                                 </div>

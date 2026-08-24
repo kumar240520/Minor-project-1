@@ -138,8 +138,8 @@ export const getRedirectPathForRole = (role) =>
 export const isValidInstitutionalEmail = (email) => {
   if (!email) return false;
   const lowerEmail = email.toLowerCase().trim();
-  // Specifically enforcing start with 0808 and end with .ies@ipsacademy.org
-  return lowerEmail.startsWith('0808') && lowerEmail.endsWith('.ies@ipsacademy.org');
+  // Specifically enforcing ending with .ies@ipsacademy.org
+  return lowerEmail.endsWith('.ies@ipsacademy.org');
 };
 
 export const getAuthenticatedUser = async () => {
