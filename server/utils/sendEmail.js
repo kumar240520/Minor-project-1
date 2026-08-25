@@ -1,25 +1,28 @@
 const nodemailer = require('nodemailer');
 
+const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+const emailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+
 // Create a transporter using environment variables
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: emailUser,
+        pass: emailPass
     }
 });
 
 const sendEmail = async ({ email, subject, otp }) => {
     try {
         // Validate environment variables
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.warn('Email credentials not configured. Please set EMAIL_USER and EMAIL_PASS in .env');
+        if (!emailUser || !emailPass) {
+            console.warn('Email credentials not configured. Please set EMAIL_USER/SMTP_USER and EMAIL_PASS/SMTP_PASS in environment variables');
             // For development, return success without sending email
             return true;
         }
 
         const mailOptions = {
-            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            from: process.env.EMAIL_FROM || emailUser,
             to: email,
             subject: subject,
             html: `

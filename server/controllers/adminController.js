@@ -5,13 +5,16 @@ const { supabase } = require('../supabaseClient');
 // Uses Nodemailer with Gmail's SMTP relay (~500 free emails/day)
 // Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in server/.env
 const createTransporter = () => {
+    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+    const port = parseInt(process.env.SMTP_PORT) || 465;
     return nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT) || 587,
-        secure: parseInt(process.env.SMTP_PORT) === 465, // Port 465 requires true, 587 requires false
+        port: port,
+        secure: port === 465, // Port 465 requires secure: true
         auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
+            user: user,
+            pass: pass
         },
         tls: {
             rejectUnauthorized: false
@@ -20,7 +23,9 @@ const createTransporter = () => {
 };
  
 const isSmtpConfigured = () => {
-    return !!process.env.SMTP_USER && !!process.env.SMTP_PASS;
+    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+    return !!user && !!pass;
 };
  
 // @desc    Send bulk email to users
@@ -81,8 +86,9 @@ exports.sendBulkEmail = async (req, res) => {
             });
         }
  
+        const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
         const transporter = createTransporter();
-        const fromAddress = process.env.EMAIL_FROM || `EduSure <${process.env.SMTP_USER}>`;
+        const fromAddress = process.env.EMAIL_FROM || `EduSure <${smtpUser}>`;
  
         // Verify SMTP connection before sending
         try {
@@ -91,7 +97,7 @@ exports.sendBulkEmail = async (req, res) => {
             console.error('[SMTP] Connection FAILED:', verifyError.message);
             return res.status(500).json({
                 success: false,
-                message: `SMTP connection failed: ${verifyError.message}. Check SMTP_USER/SMTP_PASS in server/.env`
+                message: `SMTP connection failed: ${verifyError.message}. Check SMTP_USER/SMTP_PASS or EMAIL_USER/EMAIL_PASS in environment variables`
             });
         }
  
