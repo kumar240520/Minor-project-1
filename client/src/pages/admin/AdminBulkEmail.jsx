@@ -28,20 +28,17 @@ const AdminBulkEmail = () => {
     const [newTemplateForm, setNewTemplateForm] = useState({ name: '', subject: '', content: '' });
 
     const getApiBase = () => {
-        const configuredBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
-        // Ignore placeholder URLs that were never configured
-        if (configuredBase.includes('your-backend-server') || configuredBase.includes('your-server-url')) {
-            return import.meta.env.PROD ? '' : 'http://localhost:5000';
-        }
-        // In production (Vercel deployment), if configuredBase points to localhost, use relative '' so Vercel rewrites handle /api
-        if (import.meta.env.PROD && configuredBase.includes('localhost')) {
+        // Deployed environments (Vercel/Netlify) MUST use relative path '' so requests go to /api/... on the current domain
+        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
             return '';
         }
-        if (configuredBase) {
+
+        const configuredBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
+        if (configuredBase && !configuredBase.includes('your-backend-server') && !configuredBase.includes('your-server-url')) {
             return configuredBase.replace(/\/api\/?$/, '').replace(/\/$/, '');
         }
-        // Fallback: relative in PROD, localhost:5000 in DEV
-        return import.meta.env.PROD ? '' : 'http://localhost:5000';
+
+        return 'http://localhost:5000';
     };
 
     useEffect(() => {
