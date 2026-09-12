@@ -58,11 +58,25 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   preview: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   define: {
     __APP_ENV__: JSON.stringify(mode)
