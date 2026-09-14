@@ -1,15 +1,31 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Mail, Lock, LogIn, ArrowLeft, Shield, Clock, RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { ensureStudentProfile, getAuthenticatedUser, getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError, isValidInstitutionalEmail } from '../utils/auth';
+import { ensureStudentProfile, getAuthenticatedUser, getAuthenticatedUserWithRole, getRedirectPathForRole, isRowLevelSecurityError, isValidInstitutionalEmail, fetchAuthPolicy } from '../utils/auth';
 import { useOTP } from '../hooks/useOTP';
 import OTPInput from '../components/OTPInput';
 
 const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
+
+    const [authPolicy, setAuthPolicy] = useState({
+        allow_non_college_emails: true,
+        allowed_domains: ['.ies@ipsacademy.org']
+    });
+
+    useEffect(() => {
+        let mounted = true;
+        fetchAuthPolicy().then(policy => {
+            if (mounted && policy) {
+                setAuthPolicy(policy);
+            }
+        });
+        return () => { mounted = false; };
+    }, []);
 
     const [email, setEmail] = useState(location.state?.email || '');
     const [password, setPassword] = useState('');
@@ -53,8 +69,10 @@ const Login = () => {
         setSuccessMsg(null);
         setIsSendingOTP(true);
 
-        if (!isValidInstitutionalEmail(email)) {
-            setError('Only institutional emails ending in .ies@ipsacademy.org are allowed.');
+        if (!isValidInstitutionalEmail(email, authPolicy.allow_non_college_emails)) {
+            setError(authPolicy.allow_non_college_emails 
+                ? 'Please enter a valid email address.' 
+                : 'Only institutional emails ending in .ies@ipsacademy.org are allowed.');
             setIsSendingOTP(false);
             return;
         }
@@ -259,9 +277,11 @@ const Login = () => {
         setSuccessMsg(null);
         setIsSubmitting(true);
 
-        if (!isValidInstitutionalEmail(email)) {
+        if (!isValidInstitutionalEmail(email, authPolicy.allow_non_college_emails)) {
              setIsSubmitting(false);
-             setError('Only institutional emails ending in .ies@ipsacademy.org are allowed.');
+             setError(authPolicy.allow_non_college_emails 
+                 ? 'Please enter a valid email address.' 
+                 : 'Only institutional emails ending in .ies@ipsacademy.org are allowed.');
              return;
         }
 
@@ -444,7 +464,7 @@ const Login = () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                            placeholder="student.ies@ipsacademy.org"
+                                            placeholder={authPolicy.allow_non_college_emails ? "name@gmail.com or student.ies@ipsacademy.org" : "student.ies@ipsacademy.org"}
                                         />
                                     </div>
                                 </div>
@@ -608,7 +628,7 @@ const Login = () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="pl-10 block w-full rounded-xl border-gray-200 shadow-sm focus:ring-violet-500 focus:border-violet-500 bg-gray-50 border py-3 transition-colors"
-                                            placeholder="student.ies@ipsacademy.org"
+                                            placeholder={authPolicy.allow_non_college_emails ? "name@gmail.com or student.ies@ipsacademy.org" : "student.ies@ipsacademy.org"}
                                         />
                                     </div>
                                 </div>

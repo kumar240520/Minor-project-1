@@ -17,7 +17,8 @@ import {
     Menu,
     X,
     MessageSquare,
-    Mail
+    Mail,
+    ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -33,6 +34,7 @@ const ResponsiveAdminSidebar = () => {
         { path: `${adminBasePath}/pyqs`, label: 'PYQ Approval', icon: BookOpenCheck },
         { path: `${adminBasePath}/rewards`, label: 'Rewards', icon: Award },
         { path: `${adminBasePath}/users`, label: 'Users', icon: Users },
+        { path: `${adminBasePath}/auth-settings`, label: 'Access Control', icon: ShieldCheck },
         { path: `${adminBasePath}/transactions`, label: 'Transactions', icon: ReceiptText },
         { path: `${adminBasePath}/reports`, label: 'Reports', icon: AlertOctagon },
         { path: `${adminBasePath}/events`, label: 'Events', icon: CalendarDays },

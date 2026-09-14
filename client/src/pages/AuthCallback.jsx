@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { getAuthenticatedUserWithRole, getRedirectPathForRole, isValidInstitutionalEmail } from '../utils/auth';
+import { getAuthenticatedUserWithRole, getRedirectPathForRole, isValidInstitutionalEmail, fetchAuthPolicy } from '../utils/auth';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
@@ -96,10 +96,14 @@ const AuthCallback = () => {
                 
                 if (error) throw error;
                 
+                const policy = await fetchAuthPolicy();
+                
                 if (session) {
-                    if (!isValidInstitutionalEmail(session.user.email)) {
+                    if (!isValidInstitutionalEmail(session.user.email, policy.allow_non_college_emails)) {
                         await supabase.auth.signOut();
-                        throw new Error('Only institutional emails ending in .ies@ipsacademy.org are allowed');
+                        throw new Error(policy.allow_non_college_emails 
+                            ? 'Please use a valid email address.' 
+                            : 'Only institutional emails ending in .ies@ipsacademy.org are allowed');
                     }
                     const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
                     if (mounted) navigate(getRedirectPathForRole(role), { replace: true });
@@ -109,9 +113,11 @@ const AuthCallback = () => {
                         if (event === 'SIGNED_IN' && currentSession) {
                             subscription.unsubscribe();
                             try {
-                                if (!isValidInstitutionalEmail(currentSession.user.email)) {
+                                if (!isValidInstitutionalEmail(currentSession.user.email, policy.allow_non_college_emails)) {
                                     await supabase.auth.signOut();
-                                    throw new Error('Only institutional emails ending in .ies@ipsacademy.org are allowed');
+                                    throw new Error(policy.allow_non_college_emails 
+                                        ? 'Please use a valid email address.' 
+                                        : 'Only institutional emails ending in .ies@ipsacademy.org are allowed');
                                 }
                                 const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
                                 if (mounted) navigate(getRedirectPathForRole(role), { replace: true });

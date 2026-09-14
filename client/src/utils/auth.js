@@ -135,12 +135,37 @@ export class InvalidUserRoleError extends Error {
 export const getRedirectPathForRole = (role) =>
   role === 'admin' ? '/admin/dashboard' : '/dashboard';
 
-export const isValidInstitutionalEmail = (email) => {
+export const isValidInstitutionalEmail = (email, allowNonCollege = false) => {
   if (!email) return false;
   const lowerEmail = email.toLowerCase().trim();
+  const basicEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lowerEmail);
+  if (!basicEmailValid) return false;
+
+  // If system policy allows non-college emails, allow any valid email (e.g. Gmail)
+  if (allowNonCollege) {
+    return true;
+  }
   // Specifically enforcing ending with .ies@ipsacademy.org
   return lowerEmail.endsWith('.ies@ipsacademy.org');
 };
+
+export const fetchAuthPolicy = async () => {
+  try {
+    const { authAPI } = await import('../services/api');
+    const data = await authAPI.getPolicy();
+    return {
+      allow_non_college_emails: Boolean(data?.allow_non_college_emails),
+      allowed_domains: data?.allowed_domains || ['.ies@ipsacademy.org']
+    };
+  } catch (err) {
+    console.warn('Failed to fetch auth policy, defaulting to permissive:', err);
+    return {
+      allow_non_college_emails: true,
+      allowed_domains: ['.ies@ipsacademy.org']
+    };
+  }
+};
+
 
 export const getAuthenticatedUser = async () => {
   const {

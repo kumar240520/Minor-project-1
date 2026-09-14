@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const { supabase } = require('../supabaseClient');
+const { getAuthPolicySetting, updateAuthPolicySetting } = require('../utils/systemSettings');
  
 // ─── Gmail SMTP Transporter ───────────────────────────────────────────────────
 // Uses Nodemailer with Gmail's SMTP relay (~500 free emails/day)
@@ -852,3 +853,81 @@ exports.getUsersList = async (req, res) => {
         });
     }
 };
+
+// Helper for admin authorization check
+const verifyAdminAccess = async (req) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return { error: 'Unauthorized: Admin access required', status: 401 };
+    }
+
+    const token = authHeader.split(' ')[1];
+    const { data, error: authError } = await supabase.auth.getUser(token);
+    const user = data?.user;
+
+    if (authError || !user) {
+        return { error: 'Unauthorized: Invalid token', status: 401 };
+    }
+
+    const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (userError || !userData || userData.role !== 'admin') {
+        return { error: 'Forbidden: Admin access required', status: 403 };
+    }
+
+    return { user, userData };
+};
+
+// @desc    Get authentication settings (College email policy)
+// @route   GET /api/admin/auth-settings
+// @access  Private (Admin only)
+exports.getAuthSettings = async (req, res) => {
+    try {
+        const authCheck = await verifyAdminAccess(req);
+        if (authCheck.error) {
+            return res.status(authCheck.status).json({ success: false, message: authCheck.error });
+        }
+
+        const policy = await getAuthPolicySetting();
+        res.status(200).json({
+            success: true,
+            data: policy
+        });
+    } catch (error) {
+        console.error('Get auth settings error:', error);
+        res.status(500).json({ success: false, message: 'Failed to retrieve auth settings' });
+    }
+};
+
+// @desc    Update authentication settings (Toggle college email restriction)
+// @route   PUT /api/admin/auth-settings
+// @access  Private (Admin only)
+exports.updateAuthSettings = async (req, res) => {
+    try {
+        const authCheck = await verifyAdminAccess(req);
+        if (authCheck.error) {
+            return res.status(authCheck.status).json({ success: false, message: authCheck.error });
+        }
+
+        const { allow_non_college_emails, allowed_domains } = req.body;
+
+        const updated = await updateAuthPolicySetting({
+            allow_non_college_emails: Boolean(allow_non_college_emails),
+            allowed_domains: Array.isArray(allowed_domains) ? allowed_domains : ['.ies@ipsacademy.org']
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Authentication policy updated: Non-college emails are now ${updated.allow_non_college_emails ? 'ALLOWED' : 'RESTRICTED (College email only)'}.`,
+            data: updated
+        });
+    } catch (error) {
+        console.error('Update auth settings error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update auth settings' });
+    }
+};
+

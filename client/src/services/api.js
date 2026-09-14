@@ -1,25 +1,29 @@
-// API service for serverless functions
+// API service for serverless functions & custom backend endpoints
 
 // Get base URL based on environment
 const getBaseUrl = () => {
-  if (import.meta.env.MODE === 'development') {
-    return 'http://localhost:5000/api';
+  const configuredBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
+  if (configuredBase && !configuredBase.includes('your-backend-server') && !configuredBase.includes('your-server-url')) {
+    return configuredBase.replace(/\/api\/?$/, '').replace(/\/$/, '') + '/api';
   }
-  
-  // For Netlify, use the deployed server URL
-  if (import.meta.env.MODE === 'netlify' || import.meta.env.VITE_PLATFORM === 'netlify') {
-    return import.meta.env.VITE_API_BASE_URL || 'https://your-server-url.com/api';
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return '/api';
   }
-  
-  // Default for Vercel and other platforms
-  return '/api';
+  return 'http://localhost:5000/api';
 };
 
-const BASE_URL = getBaseUrl();
+// Generic resilient API request function
+export const apiRequest = async (endpoint, options = {}) => {
+  const base = getBaseUrl();
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-// Generic API request function
-const apiRequest = async (endpoint, options = {}) => {
-  const url = `${BASE_URL}${endpoint}`;
+  const candidates = [
+    `${base}${normalizedEndpoint}`,
+    `/api${normalizedEndpoint}`,
+    `http://localhost:5000/api${normalizedEndpoint}`
+  ];
+
+  const uniqueCandidates = [...new Set(candidates)];
   
   const config = {
     headers: {
@@ -29,19 +33,31 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options,
   };
 
-  try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
+  let lastError = null;
 
-    return await response.json();
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
+  for (const url of uniqueCandidates) {
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json().catch(() => ({}));
+      
+      if (!response.ok) {
+        const errMsg = data.message || data.error || `HTTP error ${response.status}`;
+        const err = new Error(errMsg);
+        err.status = response.status;
+        err.data = data;
+        throw err;
+      }
+      return data;
+    } catch (err) {
+      lastError = err;
+      // If client-level response error with HTTP status (e.g. 400 bad request, 401 unauthorized, 403 forbidden), don't retry other candidates
+      if (err.status && err.status >= 400 && err.status < 500) {
+        throw err;
+      }
+    }
   }
+
+  throw lastError || new Error('Network request failed across all candidate endpoints.');
 };
 
 // Rewards API
@@ -92,8 +108,49 @@ export const rewardsAPI = {
   },
 };
 
+// Auth Policy & Registration OTP API
+export const authAPI = {
+  getPolicy: async () => {
+    return apiRequest('/auth/policy');
+  },
+  sendRegistrationOTP: async ({ email, name }) => {
+    return apiRequest('/auth/send-registration-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, name }),
+    });
+  },
+  verifyRegistrationOTP: async ({ email, otp, password, name }) => {
+    return apiRequest('/auth/verify-registration-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp, password, name }),
+    });
+  },
+};
+
+// Admin Auth Settings API
+export const adminAuthAPI = {
+  getAuthSettings: async (token) => {
+    return apiRequest('/admin/auth-settings', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  updateAuthSettings: async (token, { allow_non_college_emails, allowed_domains }) => {
+    return apiRequest('/admin/auth-settings', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ allow_non_college_emails, allowed_domains }),
+    });
+  },
+};
+
 // Export default API service
 export default {
   apiRequest,
   rewardsAPI,
+  authAPI,
+  adminAuthAPI,
 };
