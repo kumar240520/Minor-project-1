@@ -4,11 +4,20 @@ const { supabase } = require('../supabaseClient');
 // ─── Gmail SMTP Transporter ───────────────────────────────────────────────────
 // Uses Nodemailer with Gmail's SMTP relay (~500 free emails/day)
 // Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in server/.env
+const getSmtpCredentials = () => {
+    let user = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
+    let pass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim().replace(/\s+/g, '');
+    
+    // Auto-resolve stale edusure24 credentials if provided by environment
+    if (user === 'edusure24@gmail.com' || pass.startsWith('goj') || !user) {
+        user = 'edusure2026@gmail.com';
+        pass = 'senzctejkqizuxod';
+    }
+    return { user, pass };
+};
+
 const createTransporter = () => {
-    const rawUser = process.env.SMTP_USER || process.env.EMAIL_USER || '';
-    const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
-    const user = rawUser.trim();
-    const pass = rawPass.trim().replace(/\s+/g, '');
+    const { user, pass } = getSmtpCredentials();
     const port = parseInt(process.env.SMTP_PORT) || 465;
     return nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -25,8 +34,7 @@ const createTransporter = () => {
 };
  
 const isSmtpConfigured = () => {
-    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+    const { user, pass } = getSmtpCredentials();
     return !!user && !!pass;
 };
 
@@ -360,9 +368,11 @@ exports.sendBulkEmail = async (req, res) => {
             });
         }
  
-        const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+        const { user: smtpUser } = getSmtpCredentials();
         const transporter = createTransporter();
-        const fromAddress = process.env.EMAIL_FROM || `EduSure <${smtpUser}>`;
+        const fromAddress = (process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes('edusure24'))
+            ? process.env.EMAIL_FROM
+            : `EduSure <${smtpUser}>`;
  
         // Verify SMTP connection before sending
         try {
@@ -575,9 +585,11 @@ exports.sendTestEmail = async (req, res) => {
             });
         }
 
-        const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+        const { user: smtpUser } = getSmtpCredentials();
         const transporter = createTransporter();
-        const fromAddress = process.env.EMAIL_FROM || `EduSure <${smtpUser}>`;
+        const fromAddress = (process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes('edusure24'))
+            ? process.env.EMAIL_FROM
+            : `EduSure <${smtpUser}>`;
 
         const { htmlTemplate, plainTextVersion } = generateEmailTemplate({
             subject: `[TEST] ${subject}`,

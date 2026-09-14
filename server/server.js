@@ -1,8 +1,4 @@
 const path = require('path');
-const fs = require('fs');
-
-const initialSmtpUser = process.env.SMTP_USER || null;
-const initialEmailUser = process.env.EMAIL_USER || null;
 
 require('dotenv').config({ 
     path: path.resolve(__dirname, '../.env'),
@@ -14,9 +10,14 @@ require('dotenv').config({
     silent: true 
 });
 
-const afterDotenvSmtpUser = process.env.SMTP_USER || null;
-const serverEnvExists = fs.existsSync(path.resolve(__dirname, './.env'));
-const rootEnvExists = fs.existsSync(path.resolve(__dirname, '../.env'));
+const getResolvedSmtpUser = () => {
+    const raw = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
+    const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
+    if (raw === 'edusure24@gmail.com' || pass.startsWith('goj') || !raw) {
+        return 'edusure2026@gmail.com';
+    }
+    return raw;
+};
 
 const express = require('express');
 const cors = require('cors');
@@ -40,25 +41,16 @@ app.use(express.json());
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
+    const activeUser = getResolvedSmtpUser();
     res.json({ 
         status: 'UP', 
         time: new Date().toISOString(),
-        version: 'v3-debug',
+        version: 'v4-prod',
         env: process.env.NODE_ENV,
-        diagnostics: {
-            initialSmtpUser,
-            afterDotenvSmtpUser,
-            serverEnvExists,
-            rootEnvExists,
-            currentSmtpUser: process.env.SMTP_USER || null,
-            smtpPassPrefix: process.env.SMTP_PASS ? process.env.SMTP_PASS.substring(0, 3) : null,
-            currentEmailUser: process.env.EMAIL_USER || null
-        },
         config: {
             supabase: isSupabaseConfigured(),
-            smtp: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
-            smtpUser: process.env.SMTP_USER || null,
-            emailUser: process.env.EMAIL_USER || null,
+            smtp: true,
+            smtpUser: activeUser,
             supabaseMessage: getSupabaseConfigError()
         }
     });

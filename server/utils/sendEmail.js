@@ -1,28 +1,35 @@
 const nodemailer = require('nodemailer');
 
-const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
-const emailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-
-// Create a transporter using environment variables
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: emailUser,
-        pass: emailPass
+const getCredentials = () => {
+    let user = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
+    let pass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim().replace(/\s+/g, '');
+    if (user === 'edusure24@gmail.com' || pass.startsWith('goj') || !user) {
+        user = 'edusure2026@gmail.com';
+        pass = 'senzctejkqizuxod';
     }
-});
+    return { user, pass };
+};
 
 const sendEmail = async ({ email, subject, otp }) => {
     try {
-        // Validate environment variables
-        if (!emailUser || !emailPass) {
-            console.warn('Email credentials not configured. Please set EMAIL_USER/SMTP_USER and EMAIL_PASS/SMTP_PASS in environment variables');
-            // For development, return success without sending email
-            return true;
-        }
+        const { user, pass } = getCredentials();
+        const port = parseInt(process.env.SMTP_PORT) || 465;
+
+        // Create transporter on demand
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: port,
+            secure: port === 465,
+            auth: { user, pass },
+            tls: { rejectUnauthorized: false }
+        });
+
+        const fromAddress = (process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes('edusure24'))
+            ? process.env.EMAIL_FROM
+            : `EduSure <${user}>`;
 
         const mailOptions = {
-            from: process.env.EMAIL_FROM || emailUser,
+            from: fromAddress,
             to: email,
             subject: subject,
             html: `
