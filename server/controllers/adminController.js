@@ -277,7 +277,7 @@ const generateEmailTemplate = ({
                                 EduSure Learning & Examination Platform
                             </p>
                             <p style="margin: 0 0 16px 0; font-size: 12px; color: #94a3b8; line-height: 1.5;">
-                                This email was sent to you as a registered member of the EduSure platform. Please do not reply directly to this automated email.
+                                This email was sent to you as a registered member of the EduSure platform. To unsubscribe or manage notifications, reply to this email with "Unsubscribe".
                             </p>
                             <div style="margin: 16px 0 12px 0;">
                                 <span style="display: inline-block; width: 40px; height: 2px; background-color: #e2e8f0;"></span>
@@ -432,15 +432,22 @@ exports.sendBulkEmail = async (req, res) => {
         for (let i = 0; i < batches.length; i++) {
             const batch = batches[i];
  
-            // Send all emails in the batch in parallel for speed
+            // Send all emails in the batch with deliverability headers
             const results = await Promise.allSettled(
                 batch.map(recipientEmail =>
                     transporter.sendMail({
                         from: fromAddress,
+                        replyTo: smtpUser,
                         to: recipientEmail,
                         subject: subject,
                         text: plainTextVersion,
-                        html: htmlTemplate
+                        html: htmlTemplate,
+                        headers: {
+                            'List-Unsubscribe': `<mailto:${smtpUser}?subject=Unsubscribe%20${encodeURIComponent(recipientEmail)}>`,
+                            'X-Entity-Ref-ID': `${campaignId}-${Date.now()}`,
+                            'X-Mailer': 'EduSure Platform Mailer',
+                            'Precedence': 'bulk'
+                        }
                     }).then(() => {
                         console.log(`[SMTP] ✓ Delivered to: ${recipientEmail}`);
                         return { success: true, email: recipientEmail };
@@ -603,10 +610,14 @@ exports.sendTestEmail = async (req, res) => {
 
         await transporter.sendMail({
             from: fromAddress,
+            replyTo: smtpUser,
             to: testEmail,
-            subject: `[TEST PREVIEW] ${subject}`,
+            subject: `[Test] ${subject}`,
             text: plainTextVersion,
-            html: htmlTemplate
+            html: htmlTemplate,
+            headers: {
+                'X-Mailer': 'EduSure Platform Mailer'
+            }
         });
 
         res.status(200).json({
