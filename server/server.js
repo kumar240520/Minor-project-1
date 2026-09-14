@@ -35,10 +35,13 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'UP', 
         time: new Date().toISOString(),
+        version: 'v2-smtp-check',
         env: process.env.NODE_ENV,
         config: {
             supabase: isSupabaseConfigured(),
             smtp: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
+            smtpUser: process.env.SMTP_USER || null,
+            emailUser: process.env.EMAIL_USER || null,
             supabaseMessage: getSupabaseConfigError()
         }
     });
