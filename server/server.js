@@ -51,6 +51,7 @@ app.get('/api/health', (req, res) => {
             serverEnvExists,
             rootEnvExists,
             currentSmtpUser: process.env.SMTP_USER || null,
+            smtpPassPrefix: process.env.SMTP_PASS ? process.env.SMTP_PASS.substring(0, 3) : null,
             currentEmailUser: process.env.EMAIL_USER || null
         },
         config: {
