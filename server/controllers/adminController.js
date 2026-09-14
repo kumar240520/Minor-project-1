@@ -342,7 +342,7 @@ exports.sendBulkEmail = async (req, res) => {
             console.error('[AUTH ERROR] Bulk email verification failed:', authError?.message || authError || 'No user found');
             return res.status(401).json({
                 success: false,
-                message: 'Unauthorized: Invalid token'
+                message: `Unauthorized: ${authError?.message || 'Invalid token. Please log out and log back in.'}`
             });
         }
  
@@ -560,7 +560,7 @@ exports.sendTestEmail = async (req, res) => {
         if (authError || !user) {
             return res.status(401).json({
                 success: false,
-                message: 'Unauthorized: Invalid token'
+                message: `Unauthorized: ${authError?.message || 'Invalid token. Please log out and log back in.'}`
             });
         }
 
