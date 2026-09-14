@@ -25,9 +25,9 @@ SUPABASE_URL=https://acobfukuvqrehbrqnyxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key (the JWT key, not sb_secret)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
-SMTP_USER=edusure24@gmail.com
-SMTP_PASS=your_gmail_app_password
-EMAIL_FROM="EduSure" <edusure24@gmail.com>
+SMTP_USER=edusure2026@gmail.com
+SMTP_PASS=your_16_char_google_app_password
+EMAIL_FROM="EduSure" <edusure2026@gmail.com>
 PORT=5000
 ```
 

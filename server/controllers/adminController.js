@@ -371,7 +371,7 @@ exports.sendBulkEmail = async (req, res) => {
             console.error('[SMTP] Connection FAILED:', verifyError.message);
             const isAuthError = verifyError.message.includes('534') || verifyError.message.includes('Invalid login') || verifyError.message.includes('WebLoginRequired');
             const helpfulMsg = isAuthError
-                ? `Gmail SMTP authentication failed (534-5.7.9). The 16-character Google App Password for ${smtpUser} in SMTP_PASS is invalid or expired. To fix: visit https://myaccount.google.com/apppasswords while logged into ${smtpUser}, generate a new App Password, and update SMTP_PASS in server/.env and .env.`
+                ? `Gmail SMTP authentication failed (534-5.7.9). The 16-character Google App Password for ${smtpUser} in SMTP_PASS is invalid or expired. To fix: update SMTP_USER and SMTP_PASS in Vercel Project Settings (Environment Variables) and Redeploy, or update server/.env if running locally.`
                 : `SMTP connection failed: ${verifyError.message}. Check SMTP_USER/SMTP_PASS in environment variables`;
             
             // Mark campaign as failed in Supabase so it does NOT stay as 'sending'
@@ -605,7 +605,7 @@ exports.sendTestEmail = async (req, res) => {
         console.error('Send test email error:', error);
         const isAuthError = (error.message || '').includes('534') || (error.message || '').includes('Invalid login') || (error.message || '').includes('WebLoginRequired');
         const helpfulMsg = isAuthError
-            ? `Gmail SMTP authentication failed (534-5.7.9). The 16-character Google App Password in SMTP_PASS is invalid or expired. To fix: visit https://myaccount.google.com/apppasswords while logged into your Gmail, generate a new App Password, and update SMTP_PASS in server/.env and .env.`
+            ? `Gmail SMTP authentication failed (534-5.7.9). The 16-character Google App Password in SMTP_PASS is invalid or expired. To fix: update SMTP_USER and SMTP_PASS in Vercel Project Settings (Environment Variables) and Redeploy, or update server/.env if running locally.`
             : (error.message || 'Failed to send test email');
         res.status(500).json({
             success: false,

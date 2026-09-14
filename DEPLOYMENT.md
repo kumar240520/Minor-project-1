@@ -49,9 +49,9 @@ edusure/
    # For Bulk Email SMTP (if backend is running via serverless or Express redirect)
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=465
-   SMTP_USER=edusure24@gmail.com
-   SMTP_PASS=your_gmail_app_password
-   EMAIL_FROM="EduSure" <edusure24@gmail.com>
+   SMTP_USER=edusure2026@gmail.com
+   SMTP_PASS=your_16_char_google_app_password
+   EMAIL_FROM="EduSure" <edusure2026@gmail.com>
    ```
 
 3. **Deploy to Vercel**
@@ -97,9 +97,9 @@ edusure/
    # For Bulk Email SMTP (if backend is running via serverless or Express redirect)
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=465
-   SMTP_USER=edusure24@gmail.com
-   SMTP_PASS=your_gmail_app_password
-   EMAIL_FROM="EduSure" <edusure24@gmail.com>
+   SMTP_USER=edusure2026@gmail.com
+   SMTP_PASS=your_16_char_google_app_password
+   EMAIL_FROM="EduSure" <edusure2026@gmail.com>
    ```
 
 3. **Deploy to Netlify**
