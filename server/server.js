@@ -1,4 +1,8 @@
 const path = require('path');
+const fs = require('fs');
+
+const initialSmtpUser = process.env.SMTP_USER || null;
+const initialEmailUser = process.env.EMAIL_USER || null;
 
 require('dotenv').config({ 
     path: path.resolve(__dirname, '../.env'),
@@ -9,6 +13,10 @@ require('dotenv').config({
     path: path.resolve(__dirname, './.env'),
     silent: true 
 });
+
+const afterDotenvSmtpUser = process.env.SMTP_USER || null;
+const serverEnvExists = fs.existsSync(path.resolve(__dirname, './.env'));
+const rootEnvExists = fs.existsSync(path.resolve(__dirname, '../.env'));
 
 const express = require('express');
 const cors = require('cors');
@@ -35,8 +43,16 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'UP', 
         time: new Date().toISOString(),
-        version: 'v2-smtp-check',
+        version: 'v3-debug',
         env: process.env.NODE_ENV,
+        diagnostics: {
+            initialSmtpUser,
+            afterDotenvSmtpUser,
+            serverEnvExists,
+            rootEnvExists,
+            currentSmtpUser: process.env.SMTP_USER || null,
+            currentEmailUser: process.env.EMAIL_USER || null
+        },
         config: {
             supabase: isSupabaseConfigured(),
             smtp: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
