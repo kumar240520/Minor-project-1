@@ -112,10 +112,22 @@ export default function HeroSection() {
           className="text-[15px] sm:text-[16px] lg:text-[18px] text-slate-700 leading-relaxed max-w-[540px] mb-5 sm:mb-6 font-sans font-medium"
         >
           Find, share and access{' '}
-          <span className="bg-purple-100 text-[#5B21F4] font-bold px-2 py-0.5 rounded-md border border-purple-200/80">
+          <span className="bg-purple-100 text-[#5B21F4] font-bold px-2 py-0.5 rounded-md border border-purple-200/80 inline-block">
             verified notes
           </span>
-          , PDFs, PYQs and study materials. Earn coins by contributing and help build a smarter, stronger student community.
+          ,{' '}
+          <span className="bg-purple-100 text-[#5B21F4] font-bold px-2 py-0.5 rounded-md border border-purple-200/80 inline-block">
+            PDFs
+          </span>
+          ,{' '}
+          <span className="bg-purple-100 text-[#5B21F4] font-bold px-2 py-0.5 rounded-md border border-purple-200/80 inline-block">
+            PYQs
+          </span>{' '}
+          and{' '}
+          <span className="bg-purple-100 text-[#5B21F4] font-bold px-2 py-0.5 rounded-md border border-purple-200/80 inline-block">
+            study materials
+          </span>
+          . Earn coins by contributing and help build a smarter, stronger student community.
         </motion.p>
 
         {/* 4. CTA Buttons: Balanced row on mobile and desktop */}

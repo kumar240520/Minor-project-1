@@ -71,7 +71,7 @@ const CATEGORY_TABS = [
     shortLabel: 'Placement',
     icon: Briefcase,
     desc: 'Interviews & coding',
-    badge: '+25 Coins',
+    badge: '+5 Coins',
   },
 ];
 
@@ -201,7 +201,7 @@ const Upload = () => {
       });
 
       setUploadStatus('success');
-      setUploadMessage('Your resource has been submitted and queued for peer verification. +25 Coins will be awarded upon approval!');
+      setUploadMessage('Your resource has been submitted and queued for verification. 1 Coin rewarded now, and +4 Coins will be awarded upon admin approval (5 Coins total)!');
 
       setTimeout(() => {
         setTitle('');
@@ -240,7 +240,7 @@ const Upload = () => {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/10 text-blue-200 border border-white/15">
-                  <Sparkles className="w-3 h-3 text-amber-400" /> +25 EduCoins per Approved Resource
+                  <Sparkles className="w-3 h-3 text-amber-400" /> +5 EduCoins (1 on upload + 4 on approval)
                 </span>
                 <span className="hidden md:inline-block text-xs text-slate-300">
                   Peer-reviewed library
@@ -310,7 +310,7 @@ const Upload = () => {
                 </div>
               </div>
               <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0">
-                +25 Coins Pending
+                +5 Coins (1 Upload + 4 Approval)
               </span>
             </motion.div>
           )}
@@ -465,7 +465,7 @@ const Upload = () => {
                     <Info className="w-4 h-4 text-blue-600" /> Quality Checklist
                   </span>
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <Coins className="w-3.5 h-3.5" /> +25 Coins Reward
+                    <Coins className="w-3.5 h-3.5" /> +5 Coins Reward (1 on upload + 4 on approval)
                   </span>
                 </div>
                 <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 pt-1">
@@ -480,6 +480,10 @@ const Upload = () => {
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Must be authentic study material or official PYQ</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span><strong>Reward:</strong> 1 coin credited upon upload + 4 coins upon admin approval</span>
                   </li>
                 </ul>
               </div>
@@ -718,7 +722,7 @@ const Upload = () => {
                     )}
                   </div>
                   <span className="text-[11px] text-slate-400 hidden sm:inline-block">
-                    Earn up to +25 Coins upon admin verification
+                    Earn 5 Coins (1 on upload + 4 upon admin approval)
                   </span>
                 </div>
 

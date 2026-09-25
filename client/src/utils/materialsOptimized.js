@@ -6,8 +6,8 @@ export const MATERIALS_BUCKET =
   import.meta.env.VITE_SUPABASE_MATERIALS_BUCKET || 'Storage';
 
 const APPROVAL_REWARDS = {
-  material: 1,
-  pyq: 1,
+  material: 4,
+  pyq: 4,
 };
 
 const IMAGE_FILE_EXTENSIONS = new Set([

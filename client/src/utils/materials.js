@@ -6,8 +6,8 @@ export const MATERIALS_BUCKET =
   import.meta.env.VITE_SUPABASE_MATERIALS_BUCKET || 'Storage';
 
 const APPROVAL_REWARDS = {
-  material: 1,
-  pyq: 1,
+  material: 4,
+  pyq: 4,
 };
 
 const IMAGE_FILE_EXTENSIONS = new Set([
@@ -447,7 +447,34 @@ export const createMaterialUpload = async ({
   };
 
   try {
-    return await insertMaterialWithCompatibility(client, payload);
+    const insertedMaterial = await insertMaterialWithCompatibility(client, payload);
+
+    // Credit 1 coin immediately upon upload submission (total 5 = 1 upload + 4 approval)
+    try {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('coins')
+        .eq('id', activeUserId)
+        .maybeSingle();
+
+      const currentCoins = Number(profile?.coins || 0);
+      await supabase
+        .from('users')
+        .update({ coins: currentCoins + 1 })
+        .eq('id', activeUserId);
+
+      await createRewardTransaction({
+        userId: activeUserId,
+        amount: 1,
+        source: 'MATERIAL_UPLOAD',
+        referenceId: insertedMaterial?.id || activeUserId,
+        description: 'Upload reward: 1 coin credited upon material submission',
+      }).catch((txErr) => console.warn('Could not record upload transaction:', txErr));
+    } catch (coinErr) {
+      console.warn('Could not credit upload coin:', coinErr);
+    }
+
+    return insertedMaterial;
   } catch (error) {
     try {
       await removeStoredMaterialFile(filePath);
@@ -739,11 +766,30 @@ export const approveMaterialUpload = async ({ material, adminUserId }) => {
     return { rewardAmount: 0 };
   }
 
-  // Note: Coins are added and transaction is created by SQL trigger
-  // Do NOT manually update coins or create transactions here
-  // The trigger handles:
-  // - Adding 1 coin to user balance
-  // - Creating transaction with reference_type: 'MATERIAL_APPROVAL' or 'PYQ_APPROVAL'
+  // Credit 4 coins to uploader on approval (total 5 = 1 upload + 4 approval)
+  try {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('coins')
+      .eq('id', uploaderId)
+      .maybeSingle();
+
+    const currentCoins = Number(profile?.coins || 0);
+    await supabase
+      .from('users')
+      .update({ coins: currentCoins + rewardAmount })
+      .eq('id', uploaderId);
+
+    await createRewardTransaction({
+      userId: uploaderId,
+      amount: rewardAmount,
+      source: 'MATERIAL_APPROVAL',
+      referenceId: material.id,
+      description: `Approval reward: +${rewardAmount} coins credited upon admin approval`,
+    }).catch((txErr) => console.warn('Could not record approval transaction:', txErr));
+  } catch (coinErr) {
+    console.warn('Could not credit approval coins:', coinErr);
+  }
 
   return { rewardAmount };
 };
