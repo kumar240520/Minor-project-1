@@ -262,10 +262,10 @@ const AdminAnalytics = () => {
     const PIE_COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 
     return (
-        <div className="h-screen bg-slate-50 overflow-hidden flex">
+        <div className="min-h-screen bg-slate-50 flex overflow-x-hidden">
             <ResponsiveAdminSidebar />
 
-            <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
+            <div className="flex-1 min-w-0 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
                 <ResponsiveAdminHeader 
                     title="Platform Analytics" 
                     subtitle="Live data from your Supabase database — refreshes on every visit"

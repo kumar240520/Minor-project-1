@@ -45,7 +45,7 @@ const OTPInput = ({
   };
 
   return (
-    <div className="flex justify-center space-x-2 sm:space-x-3">
+    <div className="flex justify-center space-x-1.5 sm:space-x-2.5 w-full max-w-full overflow-hidden px-1">
       {otp.map((digit, index) => (
         <motion.div
           key={index}
@@ -65,7 +65,7 @@ const OTPInput = ({
             onKeyDown={(e) => handleKeyDown(e, index)}
             onPaste={index === 0 ? onPaste : undefined}
             disabled={disabled}
-            className="w-10 h-10 sm:w-11 sm:h-11 text-center text-lg sm:text-xl font-bold rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-8 h-9 sm:w-11 sm:h-11 text-center text-base sm:text-xl font-bold rounded-lg sm:rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="0"
             autoComplete="off"
           />

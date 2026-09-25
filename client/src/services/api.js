@@ -147,10 +147,37 @@ export const adminAuthAPI = {
   },
 };
 
+// Search & Materials API
+export const searchAPI = {
+  search: async (query, { type = 'all', limit = 20 } = {}) => {
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (type && type !== 'all') params.append('type', type);
+    if (limit) params.append('limit', limit);
+    return apiRequest(`/search?${params.toString()}`);
+  },
+  getSuggestions: async () => {
+    return apiRequest('/search/suggestions');
+  },
+  getMaterial: async (id) => {
+    return apiRequest(`/materials/${id}`);
+  },
+  recordDownload: async (id) => {
+    return apiRequest(`/materials/${id}/download`, {
+      method: 'POST',
+    });
+  },
+  getDirectDownloadUrl: (id) => {
+    const base = getBaseUrl();
+    return `${base}/materials/${id}/download`;
+  }
+};
+
 // Export default API service
 export default {
   apiRequest,
   rewardsAPI,
   authAPI,
   adminAuthAPI,
+  searchAPI,
 };

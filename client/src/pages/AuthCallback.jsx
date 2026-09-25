@@ -105,8 +105,8 @@ const AuthCallback = () => {
                             ? 'Please use a valid email address.' 
                             : 'Only institutional emails ending in .ies@ipsacademy.org are allowed');
                     }
-                    const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
-                    if (mounted) navigate(getRedirectPathForRole(role), { replace: true });
+                    const { role, profile } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
+                    if (mounted) navigate(getRedirectPathForRole(role, profile), { replace: true });
                 } else {
                     // No session immediately available. Wait for the background automatic process.
                     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
@@ -119,8 +119,8 @@ const AuthCallback = () => {
                                         ? 'Please use a valid email address.' 
                                         : 'Only institutional emails ending in .ies@ipsacademy.org are allowed');
                                 }
-                                const { role } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
-                                if (mounted) navigate(getRedirectPathForRole(role), { replace: true });
+                                const { role, profile } = await getAuthenticatedUserWithRole({ initializeStudentProfile: true });
+                                if (mounted) navigate(getRedirectPathForRole(role, profile), { replace: true });
                             } catch (err) {
                                 console.error('Error fetching role after SIGNED_IN:', err);
                                 if (mounted) navigate('/dashboard', { replace: true });

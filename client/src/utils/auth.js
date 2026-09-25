@@ -132,8 +132,22 @@ export class InvalidUserRoleError extends Error {
   }
 }
 
-export const getRedirectPathForRole = (role) =>
-  role === 'admin' ? '/admin/dashboard' : '/dashboard';
+export const getRedirectPathForRole = (role, profile = null) => {
+  const isAdmin = role === 'admin' || 
+                  profile?.role === 'admin' || 
+                  profile?.email === 'admin.ies@ipsacademy.org' || 
+                  profile?.email === 'myadmin.ies@ipsacademy.org';
+
+  if (isAdmin) {
+    return '/admin/dashboard';
+  }
+
+  if (profile && profile.onboarding_completed !== true) {
+    return '/onboarding';
+  }
+
+  return '/dashboard';
+};
 
 export const isValidInstitutionalEmail = (email, allowNonCollege = false) => {
   if (!email) return false;

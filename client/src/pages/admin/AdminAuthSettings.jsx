@@ -111,12 +111,12 @@ const AdminAuthSettings = () => {
     };
 
     return (
-        <div className="flex h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50 flex overflow-x-hidden">
             {/* Sidebar */}
             <ResponsiveAdminSidebar />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
+            <div className="flex-1 min-w-0 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
                 <ResponsiveAdminHeader 
                     title="Access Control & Authentication" 
                     subtitle="Configure student registration rules, domain restrictions, and first-year onboarding"

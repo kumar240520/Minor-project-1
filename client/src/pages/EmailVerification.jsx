@@ -63,14 +63,16 @@ const EmailVerification = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <Link to="/" className="absolute top-6 left-6 flex items-center text-gray-500 hover:text-violet-600 transition-colors z-50">
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Home
-            </Link>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 p-4 sm:p-6">
+            <div className="w-full max-w-md mb-3 flex items-center">
+                <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-violet-600 dark:text-gray-400 dark:hover:text-violet-400 transition-colors">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Home
+                </Link>
+            </div>
 
-            <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
-                <div className="p-8 md:p-12 flex flex-col justify-center bg-white relative">
+            <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl overflow-hidden border border-gray-100 dark:border-slate-800">
+                <div className="p-6 sm:p-10 flex flex-col justify-center relative">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

@@ -4,14 +4,16 @@ import { supabase } from '../supabaseClient';
 
 const ProtectedRoute = ({ children }) => {
     const [session, setSession] = useState(null);
+    const [userProfile, setUserProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const location = useLocation();
 
     useEffect(() => {
-        // Initial session check with retry for OAuth
-        const checkSession = async () => {
+        let mounted = true;
+
+        // Session & Profile check
+        const checkSessionAndProfile = async () => {
             try {
-                // Try multiple times to get session (for OAuth flows)
                 let attempts = 0;
                 let sessionData = null;
                 
@@ -20,38 +22,82 @@ const ProtectedRoute = ({ children }) => {
                     sessionData = session;
                     
                     if (!sessionData) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
+                        await new Promise(resolve => setTimeout(resolve, 300));
                         attempts++;
                     }
                 }
                 
+                if (!mounted) return;
                 setSession(sessionData);
+
+                if (sessionData?.user) {
+                    const { data: profile, error } = await supabase
+                        .from('users')
+                        .select('id, role, onboarding_completed, is_profile_complete')
+                        .eq('id', sessionData.user.id)
+                        .maybeSingle();
+
+                    if (!mounted) return;
+
+                    if (profile) {
+                        setUserProfile(profile);
+                    } else {
+                        // If record doesn't exist yet, check if admin before defaulting to pending student
+                        const isSessionAdmin = sessionData.user.email === 'admin.ies@ipsacademy.org' || 
+                                               sessionData.user.email === 'myadmin.ies@ipsacademy.org' ||
+                                               sessionData.user.app_metadata?.role === 'admin' ||
+                                               sessionData.user.user_metadata?.role === 'admin';
+                        setUserProfile({
+                            id: sessionData.user.id,
+                            role: isSessionAdmin ? 'admin' : 'student',
+                            onboarding_completed: isSessionAdmin,
+                            is_profile_complete: isSessionAdmin
+                        });
+                    }
+                } else {
+                    setUserProfile(null);
+                }
             } catch (error) {
-                console.error('Session check error:', error);
-                setSession(null);
+                console.error('ProtectedRoute check error:', error);
+                if (mounted) {
+                    setSession(null);
+                    setUserProfile(null);
+                }
             } finally {
-                setLoading(false);
+                if (mounted) {
+                    setLoading(false);
+                }
             }
         };
 
-        checkSession();
+        checkSessionAndProfile();
 
         // Listen for auth state changes
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!mounted) return;
             setSession(session);
+            if (!session) {
+                setUserProfile(null);
+                setLoading(false);
+            } else {
+                checkSessionAndProfile();
+            }
         });
 
-        return () => subscription.unsubscribe();
-    }, []);
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
+    }, [location.pathname]);
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Verifying authentication...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Verifying authentication...</p>
                 </div>
             </div>
         );
@@ -63,6 +109,33 @@ const ProtectedRoute = ({ children }) => {
             return children;
         }
         return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    // Admin check: any user with role 'admin' in database or metadata, or system root admin emails
+    const isAdmin = userProfile?.role === 'admin' ||
+                    session?.user?.app_metadata?.role === 'admin' ||
+                    session?.user?.user_metadata?.role === 'admin' ||
+                    session?.user?.email === 'admin.ies@ipsacademy.org' || 
+                    session?.user?.email === 'myadmin.ies@ipsacademy.org';
+    const isOnboardingComplete = Boolean(userProfile?.onboarding_completed);
+
+    if (isAdmin) {
+        // Admin level users bypass student onboarding completely.
+        // If an admin attempts to visit /onboarding, send them to admin dashboard.
+        if (location.pathname === '/onboarding') {
+            return <Navigate to="/admin/dashboard" replace />;
+        }
+    } else {
+        // UNAVOIDABLE ONBOARDING FOR STUDENTS:
+        // Any student who has not completed onboarding CANNOT access any protected pages
+        if (!isOnboardingComplete && location.pathname !== '/onboarding') {
+            return <Navigate to="/onboarding" replace />;
+        }
+
+        // Once onboarding is completed, prevent revisiting onboarding wizard
+        if (isOnboardingComplete && location.pathname === '/onboarding') {
+            return <Navigate to="/dashboard" replace />;
+        }
     }
 
     return children;

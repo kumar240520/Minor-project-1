@@ -1,0 +1,15 @@
+{
+  "appId": "org.ipsacademy.edusure",
+  "appName": "EduSure",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0b1326"
+    }
+  }
+}

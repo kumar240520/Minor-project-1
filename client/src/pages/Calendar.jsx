@@ -1,284 +1,465 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Bell, MessageSquare, ThumbsUp, MessageCircle, Send, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, MapPin } from 'lucide-react';
-import Sidebar, { SidebarProvider } from '../components/Sidebar';
-import ResponsiveHeader from '../components/ResponsiveHeader';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Clock,
+  MapPin,
+  Trash2,
+  X,
+  BookOpen,
+  AlertCircle
+} from 'lucide-react';
+import Layout from '../components/Layout';
 import { supabase } from '../supabaseClient';
 import { formatLocalDate } from '../utils/auth';
+import {
+  DashboardCard,
+  DashboardButton,
+  DashboardBadge,
+  FeedbackState
+} from '../components/dashboard';
 
 const Calendar = () => {
-    const [events, setEvents] = React.useState([]);
-    const [loading, setLoading] = React.useState(true);
-    const [showAddForm, setShowAddForm] = React.useState(false);
-    
-    // Dynamic month/year state
-    const [currentDate, setCurrentDate] = React.useState(new Date());
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    
-    // Form state
-    const [newEvent, setNewEvent] = React.useState({
-        title: '', date: '', time: '', location: '', type: 'Event', color: 'bg-violet-500'
-    });
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-    // Navigation functions
-    const previousMonth = () => {
-        setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
-    };
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
 
-    const nextMonth = () => {
-        setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
-    };
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    date: '',
+    time: '',
+    location: '',
+    type: 'Exam',
+    color: 'bg-rose-500'
+  });
 
-    React.useEffect(() => {
-        fetchEvents();
-    }, []);
+  const previousMonth = () => {
+    setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
+  };
 
-    const fetchEvents = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                setLoading(false);
-                return;
-            }
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+  };
 
-            const { data, error } = await supabase
-                .from('calendar_events')
-                .select('*')
-                .or(`user_id.eq.${user.id},is_global.eq.true`)
-                .order('date', { ascending: true });
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
-            if (error) throw error;
-            setEvents(data || []);
-        } catch (error) {
-            console.error('Error fetching calendar events:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchEvents = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-    const handleAddEvent = async (e) => {
-        e.preventDefault();
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return alert("You must be logged in.");
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .or(`user_id.eq.${user.id},is_global.eq.true`)
+        .order('date', { ascending: true });
 
-            const { error } = await supabase
-                .from('calendar_events')
-                .insert([{ ...newEvent, user_id: user.id, is_global: false }]);
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            if (error) throw error;
-            
-            setNewEvent({ title: '', date: '', time: '', location: '', type: 'Event', color: 'bg-violet-500' });
-            setShowAddForm(false);
-            fetchEvents();
-        } catch (error) {
-            console.error("Error adding event:", error);
-            alert("Could not add event: " + (error.message || error.details || 'Unknown error'));
-        }
-    };
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return alert('You must be logged in.');
 
-    const handleDeleteEvent = async (id) => {
-        if (!window.confirm("Delete this event?")) return;
-        try {
-            const { error } = await supabase
-                .from('calendar_events')
-                .delete()
-                .eq('id', id);
+      let colorClass = 'bg-[#2563EB]';
+      if (newEvent.type === 'Exam') colorClass = 'bg-rose-500';
+      else if (newEvent.type === 'Deadline') colorClass = 'bg-amber-500';
+      else if (newEvent.type === 'Holiday') colorClass = 'bg-emerald-500';
+      else if (newEvent.type === 'Event') colorClass = 'bg-[#5B20E8]';
 
-            if (error) throw error;
-            setEvents(prev => prev.filter(e => e.id !== id));
-        } catch (error) {
-            console.error("Error deleting event:", error);
-        }
-    };
+      const { error } = await supabase
+        .from('calendar_events')
+        .insert([{
+          ...newEvent,
+          color: colorClass,
+          user_id: user.id,
+          is_global: false
+        }]);
 
-    return (
-        <SidebarProvider>
-            <div className="min-h-screen bg-gray-50 flex">
-            <Sidebar />
+      if (error) throw error;
 
-            <div className="flex-1 flex flex-col lg:ml-60 overflow-hidden">
-                <ResponsiveHeader 
-                    title="Academic Calendar"
-                    showSearch={true}
-                    showNotifications={true}
-                    showProfile={true}
-                />
+      setNewEvent({ title: '', date: '', time: '', location: '', type: 'Exam', color: 'bg-rose-500' });
+      setShowAddForm(false);
+      fetchEvents();
+    } catch (error) {
+      console.error('Error adding event:', error);
+      alert('Could not add event: ' + (error.message || 'Unknown error'));
+    }
+  };
 
-                <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50/50">
-                    <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        
-                        {/* Main Calendar View Section (Placeholder UI for now) */}
-                        <div className="lg:col-span-2 space-y-6">
-                            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-xl font-bold text-gray-800">
-                                        {new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                                    </h2>
-                                    <div className="flex space-x-2">
-                                        <button 
-                                            onClick={previousMonth}
-                                            className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                                        >
-                                            <ChevronLeft className="h-5 w-5 text-gray-600" />
-                                        </button>
-                                        <button 
-                                            onClick={nextMonth}
-                                            className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                                        >
-                                            <ChevronRight className="h-5 w-5 text-gray-600" />
-                                        </button>
-                                    </div>
-                                </div>
+  const handleDeleteEvent = async (id) => {
+    if (!window.confirm('Delete this event?')) return;
+    try {
+      const { error } = await supabase
+        .from('calendar_events')
+        .delete()
+        .eq('id', id);
 
-                                {/* Placeholder Calendar Grid */}
-                                <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
-                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                        <div key={day} className="bg-gray-50 py-3 text-center text-xs font-bold text-gray-500 uppercase">
-                                            {day}
-                                        </div>
-                                    ))}
-                                    {/* Generating calendar days with real events */}
-                                    {(() => {
-                                        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-                                        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                                        const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-                                        const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-                                        
-                                        return Array.from({ length: totalCells }).map((_, i) => {
-                                            const dayNumber = i - firstDay + 1;
-                                            const isCurrentMonth = dayNumber > 0 && dayNumber <= daysInMonth;
-                                            const isToday = new Date().getDate() === dayNumber && 
-                                                          new Date().getMonth() === currentMonth && 
-                                                          new Date().getFullYear() === currentYear;
-                                            
-                                            const displayDate = isCurrentMonth ? dayNumber : 
-                                                              dayNumber <= 0 ? daysInPrevMonth + dayNumber : 
-                                                              dayNumber - daysInMonth;
-                                            
-                                            // Check if this date has any events
-                                            const dayEvents = events.filter(event => {
-                                                const eventDate = new Date(event.date);
-                                                return eventDate.getDate() === dayNumber && 
-                                                       eventDate.getMonth() === currentMonth && 
-                                                       eventDate.getFullYear() === currentYear;
-                                            });
-                                            const hasEvent = dayEvents.length > 0;
-                                            
-                                            return (
-                                                <div key={i} className={`bg-white min-h-[100px] p-2 ${!isCurrentMonth ? 'opacity-50' : ''}`}>
-                                                    <div className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-violet-600 text-white' : 'text-gray-700'}`}>
-                                                        {displayDate}
-                                                    </div>
-                                                    {hasEvent && isCurrentMonth && (
-                                                        <div className="mt-2 space-y-1">
-                                                            {dayEvents.slice(0, 2).map((event, idx) => (
-                                                                <div key={idx} className="text-[10px] font-bold text-white bg-violet-500 px-1.5 py-0.5 rounded truncate">
-                                                                    {event.title}
-                                                                </div>
-                                                            ))}
-                                                            {dayEvents.length > 2 && (
-                                                                <div className="text-[9px] text-gray-500">
-                                                                    +{dayEvents.length - 2} more
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        });
-                                    })()}
-                                </div>
-                            </div>
-                        </div>
+      if (error) throw error;
+      setEvents(prev => prev.filter(e => e.id !== id));
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
+  };
 
-                        {/* Upcoming List Section */}
-                        <div className="space-y-6">
-                            <button 
-                                onClick={() => setShowAddForm(!showAddForm)}
-                                className="w-full bg-violet-600 hover:bg-violet-700 text-white px-6 py-4 rounded-2xl font-bold flex items-center justify-center transition-colors shadow-sm"
-                            >
-                                <Plus className="h-5 w-5 mr-2" /> {showAddForm ? 'Cancel' : 'Add Custom Event'}
-                            </button>
+  const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
 
-                            {showAddForm && (
-                                <motion.form 
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    onSubmit={handleAddEvent}
-                                    className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4"
-                                >
-                                    <input required placeholder="Event Title" className="w-full p-2 border rounded-lg" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} />
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input required type="date" className="w-full p-2 border rounded-lg text-sm" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} />
-                                        <input required type="time" className="w-full p-2 border rounded-lg text-sm" value={newEvent.time} onChange={e => setNewEvent({...newEvent, time: e.target.value})} />
-                                    </div>
-                                    <input required placeholder="Location" className="w-full p-2 border rounded-lg" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} />
-                                    <select className="w-full p-2 border rounded-lg" value={newEvent.color} onChange={e => setNewEvent({...newEvent, color: e.target.value})}>
-                                        <option value="bg-violet-500">Event (Purple)</option>
-                                        <option value="bg-red-500">Exam (Red)</option>
-                                        <option value="bg-amber-500">Deadline (Yellow)</option>
-                                        <option value="bg-emerald-500">Other (Green)</option>
-                                    </select>
-                                    <button type="submit" className="w-full bg-gray-900 text-white p-2 rounded-lg font-bold hover:bg-gray-800 transition-colors">Save Event</button>
-                                </motion.form>
-                            )}
+  return (
+    <Layout
+      title="Academic Calendar"
+      subtitle="Semester dates, assignment deadlines, and event schedule"
+    >
+      <div className="max-w-[1720px] mx-auto space-y-6 sm:space-y-8">
+        
+        {/* Top Controls Bar */}
+        <DashboardCard className="p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#2563EB] dark:text-blue-400 border border-blue-100 dark:border-blue-900/30">
+                <CalendarIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {monthName}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {events.length} tracked academic events and deadlines
+                </p>
+              </div>
+            </div>
 
-                            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                                    <CalendarIcon className="h-5 w-5 mr-2 text-violet-600" />
-                                    Upcoming Schedule
-                                </h3>
-                                
-                                <div className="space-y-6">
-                                    {loading ? (
-                                        <div className="text-center text-sm text-gray-500 py-4">Loading schedule...</div>
-                                    ) : events.length === 0 ? (
-                                        <div className="text-center text-sm text-gray-500 py-4">No events scheduled.</div>
-                                    ) : events.map((event, index) => (
-                                        <motion.div 
-                                            key={event.id}
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.1 }}
-                                            className="relative pl-6 before:absolute before:left-0 before:top-1.5 before:bottom-0 before:w-px before:bg-gray-200 last:before:hidden"
-                                        >
-                                            <div className={`absolute left-[-4px] top-1.5 w-2 h-2 rounded-full ${event.color} ring-4 ring-white`}></div>
-                                            <div className="mb-1">
-                                                <span className="text-xs font-bold text-gray-500">{event.date}</span>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 relative group">
-                                                <h4 className="font-bold text-gray-800 mb-2">{event.title}</h4>
-                                                <button 
-                                                    onClick={() => handleDeleteEvent(event.id)}
-                                                    className="absolute top-4 right-4 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                                <div className="space-y-1.5">
-                                                    <div className="flex items-center text-xs text-gray-600">
-                                                        <Clock className="h-3.5 w-3.5 mr-2 text-gray-400" />
-                                                        {event.time}
-                                                    </div>
-                                                    <div className="flex items-center text-xs text-gray-600">
-                                                        <MapPin className="h-3.5 w-3.5 mr-2 text-gray-400" />
-                                                        {event.location}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                <button
+                  onClick={previousMonth}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                  title="Previous month"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentDate(new Date())}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border-x border-slate-200 dark:border-slate-800 transition-colors"
+                >
+                  Today
+                </button>
+                <button
+                  onClick={nextMonth}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                  title="Next month"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
 
+              <DashboardButton
+                variant="primary"
+                onClick={() => setShowAddForm(!showAddForm)}
+                icon={showAddForm ? X : Plus}
+              >
+                {showAddForm ? 'Cancel' : 'Add Event'}
+              </DashboardButton>
+            </div>
+          </div>
+        </DashboardCard>
+
+        {/* Add Event Panel */}
+        <AnimatePresence>
+          {showAddForm && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <DashboardCard className="p-5 sm:p-6 border-blue-200 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/10">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-[#2563EB]" /> Schedule New Academic Event
+                </h3>
+                <form onSubmit={handleAddEvent} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                  <div className="lg:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Event Title
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      placeholder="e.g. Midterm Lab Viva"
+                      value={newEvent.title}
+                      onChange={e => setNewEvent({ ...newEvent, title: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Date
+                    </label>
+                    <input
+                      required
+                      type="date"
+                      value={newEvent.date}
+                      onChange={e => setNewEvent({ ...newEvent, date: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Time & Location
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <input
+                        required
+                        type="time"
+                        value={newEvent.time}
+                        onChange={e => setNewEvent({ ...newEvent, time: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
+                      />
+                      <input
+                        required
+                        type="text"
+                        placeholder="Room 402"
+                        value={newEvent.location}
+                        onChange={e => setNewEvent({ ...newEvent, location: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
+                      />
                     </div>
-                </main>
-            </div>
-            </div>
-        </SidebarProvider>
-    );
+                  </div>
+
+                  <div className="flex flex-col justify-end">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Category
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={newEvent.type}
+                        onChange={e => setNewEvent({ ...newEvent, type: e.target.value })}
+                        className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
+                      >
+                        <option value="Exam">Exam</option>
+                        <option value="Deadline">Deadline</option>
+                        <option value="Event">Event</option>
+                        <option value="Holiday">Holiday</option>
+                      </select>
+                      <DashboardButton variant="primary" type="submit" size="sm">
+                        Save
+                      </DashboardButton>
+                    </div>
+                  </div>
+                </form>
+              </DashboardCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 2-Column Calendar & Upcoming Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8 items-start">
+          
+          {/* Main Month Grid View */}
+          <div className="xl:col-span-2 space-y-4">
+            <DashboardCard className="p-4 sm:p-6 overflow-hidden">
+              {/* Day header */}
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="py-2">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Month cell generation */}
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                {(() => {
+                  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+                  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                  const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+                  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+                  return Array.from({ length: totalCells }).map((_, i) => {
+                    const dayNumber = i - firstDay + 1;
+                    const isCurrentMonth = dayNumber > 0 && dayNumber <= daysInMonth;
+                    const isToday =
+                      new Date().getDate() === dayNumber &&
+                      new Date().getMonth() === currentMonth &&
+                      new Date().getFullYear() === currentYear;
+
+                    const displayDate = isCurrentMonth
+                      ? dayNumber
+                      : dayNumber <= 0
+                      ? daysInPrevMonth + dayNumber
+                      : dayNumber - daysInMonth;
+
+                    const dayEvents = isCurrentMonth
+                      ? events.filter(event => {
+                          const eventDate = new Date(event.date);
+                          return (
+                            eventDate.getDate() === dayNumber &&
+                            eventDate.getMonth() === currentMonth &&
+                            eventDate.getFullYear() === currentYear
+                          );
+                        })
+                      : [];
+
+                    return (
+                      <div
+                        key={i}
+                        className={`min-h-[85px] sm:min-h-[105px] p-1.5 sm:p-2 rounded-xl border transition-colors ${
+                          !isCurrentMonth
+                            ? 'bg-slate-50/50 dark:bg-slate-900/30 border-transparent opacity-40 text-slate-400'
+                            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
+                              isToday
+                                ? 'bg-[#2563EB] text-white font-bold'
+                                : 'text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            {displayDate}
+                          </span>
+                          {dayEvents.length > 0 && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
+                          )}
+                        </div>
+
+                        {dayEvents.length > 0 && (
+                          <div className="space-y-1">
+                            {dayEvents.slice(0, 2).map((evt, idx) => (
+                              <div
+                                key={idx}
+                                className={`text-[10px] sm:text-[11px] font-medium text-white ${
+                                  evt.color || 'bg-[#2563EB]'
+                                } px-1.5 py-0.5 rounded truncate shadow-xs`}
+                                title={`${evt.title} (${evt.time})`}
+                              >
+                                {evt.title}
+                              </div>
+                            ))}
+                            {dayEvents.length > 2 && (
+                              <div className="text-[9px] text-slate-400 font-medium px-1">
+                                +{dayEvents.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </DashboardCard>
+          </div>
+
+          {/* Upcoming Schedule Sidebar */}
+          <div className="space-y-4">
+            <DashboardCard className="p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-[#2563EB]" /> Upcoming Deadlines & Events
+                </h3>
+                <DashboardBadge variant="neutral">
+                  {events.length} Total
+                </DashboardBadge>
+              </div>
+
+              {loading ? (
+                <FeedbackState
+                  type="loading"
+                  title="Loading Events"
+                  description="Retrieving your upcoming deadlines and exam schedule..."
+                />
+              ) : events.length === 0 ? (
+                <FeedbackState
+                  type="empty"
+                  title="No Upcoming Events"
+                  description="Add an event or exam date to stay organized."
+                  actionText="Add Event"
+                  onAction={() => setShowAddForm(true)}
+                />
+              ) : (
+                <div className="space-y-3">
+                  {events.map((event, index) => (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: 15 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(index * 0.05, 0.3) }}
+                      className="group p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:border-slate-200 dark:hover:border-slate-700"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`w-2 h-2 rounded-full ${event.color || 'bg-[#2563EB]'}`} />
+                            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                              {event.date}
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
+                            {event.title}
+                          </h4>
+                          <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                            {event.time && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                {event.time}
+                              </span>
+                            )}
+                            {event.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-400" />
+                                {event.location}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {!event.is_global && (
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Remove Event"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </DashboardCard>
+          </div>
+
+        </div>
+
+      </div>
+    </Layout>
+  );
 };
 
 export default Calendar;

@@ -49,14 +49,16 @@ const handleSubmit = async (e) => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <Link to="/login" className="absolute top-6 left-6 flex items-center text-gray-500 hover:text-violet-600 transition-colors z-50">
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Sign In
-            </Link>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 sm:p-6">
+            <div className="w-full max-w-md mb-3 flex items-center">
+                <Link to="/login" className="inline-flex items-center text-gray-500 hover:text-violet-600 transition-colors text-sm font-medium">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Sign In
+                </Link>
+            </div>
 
-            <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
-                <div className="p-8 md:p-12 flex flex-col justify-center bg-white relative">
+            <div className="max-w-md w-full bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+                <div className="p-6 sm:p-10 flex flex-col justify-center bg-white relative">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

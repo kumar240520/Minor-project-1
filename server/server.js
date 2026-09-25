@@ -68,8 +68,13 @@ app.get('/api/admin/test', (req, res) => {
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const materialRoutes = require('./routes/materialRoutes');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/materials', materialRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

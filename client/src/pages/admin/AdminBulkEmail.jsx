@@ -998,7 +998,7 @@ const AdminBulkEmail = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex font-sans">
+        <div className="min-h-screen bg-slate-50 flex font-sans overflow-x-hidden">
             <ResponsiveAdminSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 min-w-0">

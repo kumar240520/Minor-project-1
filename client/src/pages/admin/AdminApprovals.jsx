@@ -214,11 +214,11 @@ const AdminApprovals = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex overflow-x-hidden">
       <ResponsiveAdminSidebar />
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col lg:ml-64 xl:ml-72 overflow-hidden">
         <ResponsiveAdminHeader 
           title="Pending Approvals" 
           subtitle="Review new materials and PYQs before they become visible to students"

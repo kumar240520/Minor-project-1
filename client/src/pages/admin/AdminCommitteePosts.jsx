@@ -132,10 +132,10 @@ const AdminCommitteePosts = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex overflow-x-hidden">
             <ResponsiveAdminSidebar />
 
-            <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
+            <div className="flex-1 min-w-0 flex flex-col lg:ml-64 overflow-hidden">
                 <ResponsiveAdminHeader
                     title="Committee Posts"
                     subtitle="Create official committee announcements for all users"

@@ -1,21 +1,17 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import HowItWorks from './components/HowItWorks';
-import Events from './components/Events';
-import StatsAndCTA from './components/StatsAndCTA';
-import Footer from './components/Footer';
+import LandingPage from './pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminGuard from './components/admin/AdminGuard';
 import { SidebarProvider } from './components/Sidebar';
+import { ThemeProvider } from './context/ThemeContext';
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const EmailVerification = lazy(() => import('./pages/EmailVerification'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ResetPasswordOTP = lazy(() => import('./pages/ResetPasswordOTP'));
@@ -47,75 +43,65 @@ const AdminCommitteePosts = lazy(() => import('./pages/admin/AdminCommitteePosts
 const AdminBulkEmail = lazy(() => import('./pages/admin/AdminBulkEmail'));
 const AdminAuthSettings = lazy(() => import('./pages/admin/AdminAuthSettings'));
 
-const Home = () => (
-  <SidebarProvider>
-    <Navbar />
-    <Hero />
-    <Features />
-    <HowItWorks />
-    <Events />
-    <StatsAndCTA />
-    <Footer />
-  </SidebarProvider>
-);
-
 const RouteLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">
     Loading page...
   </div>
 );
 
-
-
-
 function App() {
   return (
-    <Router>
-      <div className="font-sans text-gray-900 selection:bg-violet-500 selection:text-white">
-        <Suspense fallback={<RouteLoader />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/reset-password-otp" element={<ResetPasswordOTP />} />
-            <Route path="/email-verification" element={<EmailVerification />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
+    <ThemeProvider>
+      <Router>
+        <SidebarProvider>
+          <div className="font-sans text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-950 min-h-screen selection:bg-violet-500 selection:text-white transition-colors duration-200">
+            <Suspense fallback={<RouteLoader />}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/reset-password-otp" element={<ResetPasswordOTP />} />
+                <Route path="/email-verification" element={<EmailVerification />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/pyqs" element={<ProtectedRoute><PYQ /></ProtectedRoute>} />
-            <Route path="/placement-materials" element={<ProtectedRoute><PlacementMaterials /></ProtectedRoute>} />
-            <Route path="/community" element={<ProtectedRoute><CommunityPost /></ProtectedRoute>} />
-            <Route path="/my-materials" element={<ProtectedRoute><MyMaterials /></ProtectedRoute>} />
-            <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-            <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
-            <Route path="/support-center" element={<ProtectedRoute><SupportHelp /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/pyqs" element={<ProtectedRoute><PYQ /></ProtectedRoute>} />
+                <Route path="/placement-materials" element={<ProtectedRoute><PlacementMaterials /></ProtectedRoute>} />
+                <Route path="/community" element={<ProtectedRoute><CommunityPost /></ProtectedRoute>} />
+                <Route path="/my-materials" element={<ProtectedRoute><MyMaterials /></ProtectedRoute>} />
+                <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+                <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+                <Route path="/support-center" element={<ProtectedRoute><SupportHelp /></ProtectedRoute>} />
 
-            <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-            <Route path="/admin/approvals" element={<AdminGuard><AdminApprovals /></AdminGuard>} />
-            <Route path="/admin/materials" element={<AdminGuard><AdminMaterials /></AdminGuard>} />
-            <Route path="/admin/pyqs" element={<AdminGuard><AdminPYQs /></AdminGuard>} />
-            <Route path="/admin/rewards" element={<AdminGuard><AdminRewards /></AdminGuard>} />
-            <Route path="/admin/users" element={<AdminGuard><AdminUsers /></AdminGuard>} />
-            <Route path="/admin/transactions" element={<AdminGuard><AdminTransactions /></AdminGuard>} />
-            <Route path="/admin/reports" element={<AdminGuard><AdminReports /></AdminGuard>} />
-            <Route path="/admin/events" element={<AdminGuard><AdminEvents /></AdminGuard>} />
-            <Route path="/admin/committee-posts" element={<AdminGuard><AdminCommitteePosts /></AdminGuard>} />
-            <Route path="/admin/tickets" element={<AdminGuard><AdminTickets /></AdminGuard>} />
-            <Route path="/admin/analytics" element={<AdminGuard><AdminAnalytics /></AdminGuard>} />
-            <Route path="/admin/bulk-email" element={<AdminGuard><AdminBulkEmail /></AdminGuard>} />
-            <Route path="/admin/auth-settings" element={<AdminGuard><AdminAuthSettings /></AdminGuard>} />
+                <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                <Route path="/admin/approvals" element={<AdminGuard><AdminApprovals /></AdminGuard>} />
+                <Route path="/admin/materials" element={<AdminGuard><AdminMaterials /></AdminGuard>} />
+                <Route path="/admin/pyqs" element={<AdminGuard><AdminPYQs /></AdminGuard>} />
+                <Route path="/admin/rewards" element={<AdminGuard><AdminRewards /></AdminGuard>} />
+                <Route path="/admin/users" element={<AdminGuard><AdminUsers /></AdminGuard>} />
+                <Route path="/admin/transactions" element={<AdminGuard><AdminTransactions /></AdminGuard>} />
+                <Route path="/admin/reports" element={<AdminGuard><AdminReports /></AdminGuard>} />
+                <Route path="/admin/events" element={<AdminGuard><AdminEvents /></AdminGuard>} />
+                <Route path="/admin/committee-posts" element={<AdminGuard><AdminCommitteePosts /></AdminGuard>} />
+                <Route path="/admin/tickets" element={<AdminGuard><AdminTickets /></AdminGuard>} />
+                <Route path="/admin/analytics" element={<AdminGuard><AdminAnalytics /></AdminGuard>} />
+                <Route path="/admin/bulk-email" element={<AdminGuard><AdminBulkEmail /></AdminGuard>} />
+                <Route path="/admin/auth-settings" element={<AdminGuard><AdminAuthSettings /></AdminGuard>} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </div>
-    </Router>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </div>
+        </SidebarProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 

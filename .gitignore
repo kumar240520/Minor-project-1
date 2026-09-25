@@ -136,3 +136,8 @@ Desktop.ini
 
 # Serverless
 .serverless
+
+# Android folders
+android/
+client/android/
+**/android/
