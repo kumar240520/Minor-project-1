@@ -89,7 +89,7 @@ export default function StatCard({
 
         <div>
           <div className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${scheme.numberColor}`}>
-            {displayCount}{suffix}
+            {displayCount.toLocaleString()}{suffix}
           </div>
           <div className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-500 mt-0.5">
             {label}

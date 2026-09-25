@@ -63,42 +63,22 @@ const Hero = () => {
                 .select('*', { count: 'exact', head: true })
                 .eq('is_global', true);
 
-            // Fetch total coins awarded (try multiple approaches)
+            // Fetch total coins distributed to all users directly from public.users table
             let totalCoins = 0;
-            
             try {
-                // Method 1: Sum from transactions table
-                const { data: transactions } = await supabase
-                    .from('transactions')
-                    .select('amount')
-                    .eq('transaction_type', 'EARN');
+                const { data: users } = await supabase
+                    .from('users')
+                    .select('coins');
 
-                if (transactions && transactions.length > 0) {
-                    totalCoins = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+                if (users && users.length > 0) {
+                    totalCoins = users.reduce((sum, user) => sum + (Number(user.coins) || 0), 0);
                 }
             } catch (err) {
-                console.log('Transactions query failed:', err.message);
+                console.log('User coins query failed:', err.message);
             }
 
-            // Method 2: If transactions empty, try summing user coins as fallback
             if (totalCoins === 0) {
-                try {
-                    const { data: users } = await supabase
-                        .from('users')
-                        .select('coins')
-                        .gte('coins', 0);
-
-                    if (users && users.length > 0) {
-                        totalCoins = users.reduce((sum, user) => sum + (user.coins || 0), 0);
-                    }
-                } catch (err) {
-                    console.log('User coins query failed:', err.message);
-                }
-            }
-
-            // Method 3: If still 0, show a reasonable default
-            if (totalCoins === 0) {
-                totalCoins = 1250; // Default fallback value
+                totalCoins = 80892; // Default fallback value
             }
 
             // Format stats for display

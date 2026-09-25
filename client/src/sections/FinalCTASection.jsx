@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Users, Zap, Sparkles } from 'lucide-react';
+import { Users, Zap, Sparkles, Coins } from 'lucide-react';
 import ctaBg from '../assets/backgrounds/page-6.jpeg';
 import PrimaryButton from '../components/PrimaryButton';
 import HandDrawnUnderline from '../components/HandDrawnUnderline';
@@ -13,9 +13,19 @@ export default function FinalCTASection() {
 
   // Track session to show correct CTA button
   const [session, setSession] = useState(null);
+  const [liveCoins, setLiveCoins] = useState(80892);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+
+    supabase.from('users').select('coins').then(({ data }) => {
+      if (data && data.length > 0) {
+        const sum = data.reduce((acc, u) => acc + (Number(u.coins) || 0), 0);
+        setLiveCoins(sum);
+      }
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -103,6 +113,12 @@ export default function FinalCTASection() {
           transition={{ duration: 0.6, delay: 0.35 }}
           className="flex flex-col items-center justify-center gap-4"
         >
+          {/* Live Coins Distributed Highlight Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-300 text-amber-900 text-xs sm:text-sm font-bold shadow-xs select-none">
+            <Coins className="w-4 h-4 text-amber-600 fill-amber-500" />
+            <span>Over {liveCoins.toLocaleString()} EduCoins Distributed to All Users</span>
+          </div>
+
           <PrimaryButton
             size="lg"
             onClick={() => navigate(isLoggedIn ? '/dashboard' : '/register')}

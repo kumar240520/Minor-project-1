@@ -1,12 +1,36 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Users, FileText, CalendarCheck, Coins } from 'lucide-react';
 import statsBg from '../assets/backgrounds/page-5.jpeg';
 import StatCard from '../components/StatCard';
 import HandDrawnUnderline from '../components/HandDrawnUnderline';
+import { supabase } from '../supabaseClient';
 
 export default function StatisticsSection() {
   const sectionRef = useRef(null);
+  const [liveCoins, setLiveCoins] = useState(80892);
+  const [liveStudents, setLiveStudents] = useState(140);
+  const [liveNotes, setLiveNotes] = useState(49);
+
+  useEffect(() => {
+    let isMounted = true;
+    // Calculate total coins distributed to all users directly from users table
+    supabase.from('users').select('coins').then(({ data }) => {
+      if (data && data.length > 0 && isMounted) {
+        const sum = data.reduce((acc, u) => acc + (Number(u.coins) || 0), 0);
+        setLiveCoins(sum);
+        setLiveStudents(data.length);
+      }
+    });
+
+    supabase.from('materials').select('*', { count: 'exact', head: true }).eq('status', 'approved').then(({ count }) => {
+      if (count && isMounted) setLiveNotes(count);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Parallax scroll controls
   const { scrollYProgress } = useScroll({
@@ -81,7 +105,7 @@ export default function StatisticsSection() {
               >
                 <StatCard
                   icon={Users}
-                  targetNumber={131}
+                  targetNumber={liveStudents}
                   suffix="+"
                   label="Active Students"
                   colorScheme="purple"
@@ -97,7 +121,7 @@ export default function StatisticsSection() {
               >
                 <StatCard
                   icon={FileText}
-                  targetNumber={49}
+                  targetNumber={liveNotes}
                   suffix="+"
                   label="Verified Notes"
                   colorScheme="blue"
@@ -119,7 +143,7 @@ export default function StatisticsSection() {
                 />
               </motion.div>
 
-              {/* Card 4: Coins Rewarded */}
+              {/* Card 4: Coins Distributed to all users */}
               <motion.div
                 initial={{ opacity: 0, y: 30, scale: 0.94 }}
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -128,8 +152,9 @@ export default function StatisticsSection() {
               >
                 <StatCard
                   icon={Coins}
-                  targetNumber={580}
-                  label="Coins Rewarded"
+                  targetNumber={liveCoins}
+                  suffix="+"
+                  label="Coins Distributed"
                   colorScheme="yellow"
                 />
               </motion.div>

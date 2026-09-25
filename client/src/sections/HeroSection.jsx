@@ -20,10 +20,57 @@ export default function HeroSection() {
 
   // Track auth session so protected links redirect to /login when not signed in
   const [session, setSession] = useState(null);
+  const [platformStats, setPlatformStats] = useState({
+    students: '140+',
+    materials: '49',
+    coins: '80,892',
+    coinsRaw: 80892
+  });
+
   useEffect(() => {
+    let isMounted = true;
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => subscription.unsubscribe();
+
+    const fetchLiveStats = async () => {
+      try {
+        // Calculate total coins distributed to all users from public.users table
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('coins');
+
+        let sumCoins = 80892;
+        let totalUsers = 140;
+
+        if (usersData && usersData.length > 0) {
+          sumCoins = usersData.reduce((acc, u) => acc + (Number(u.coins) || 0), 0);
+          totalUsers = usersData.length;
+        }
+
+        const { count: matCount } = await supabase
+          .from('materials')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'approved');
+
+        if (isMounted) {
+          setPlatformStats({
+            students: `${totalUsers}+`,
+            materials: `${matCount || 49}`,
+            coins: sumCoins.toLocaleString(),
+            coinsRaw: sumCoins
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to fetch hero platform stats:', err);
+      }
+    };
+
+    fetchLiveStats();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Navigate to protected route or redirect to login
@@ -131,34 +178,47 @@ export default function HeroSection() {
         </motion.p>
 
         {/* 4. CTA Buttons: Balanced row on mobile and desktop */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto max-w-[480px] mb-5 sm:mb-6"
-        >
-          <button
-            type="button"
-            onClick={() => goTo('/pyqs')}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 h-[48px] rounded-full bg-gradient-to-r from-[#5B21F4] to-[#7C3AED] hover:from-[#4F1CD9] hover:to-[#6D28D9] text-white font-display font-bold text-[14px] sm:text-[15px] shadow-[0_8px_20px_rgba(91,33,244,0.30)] hover:shadow-[0_12px_26px_rgba(91,33,244,0.40)] hover:-translate-y-0.5 active:scale-98 transition-all cursor-pointer whitespace-nowrap"
+        <div className="flex flex-col items-start w-full max-w-[500px] mb-5 sm:mb-6">
+          {/* Total Coins Distributed Live Metric Pill */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-300/80 backdrop-blur-md text-[#92400E] text-[11px] sm:text-xs font-bold mb-3 select-none shadow-2xs"
           >
-            <Search className="w-4 h-4 shrink-0" />
-            <span>Explore Resources →</span>
-          </button>
+            <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" />
+            <span>{platformStats.coinsRaw.toLocaleString()} Total Coins Distributed to All Users</span>
+          </motion.div>
 
-          <button
-            type="button"
-            onClick={() => goTo('/upload')}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 h-[48px] rounded-full bg-white/95 backdrop-blur-md border-[1.5px] border-[#5B21F4]/70 text-[#5B21F4] font-display font-bold text-[14px] sm:text-[15px] hover:bg-white hover:border-[#5B21F4] hover:-translate-y-0.5 active:scale-98 transition-all shadow-sm cursor-pointer whitespace-nowrap"
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row gap-3 w-full"
           >
-            <UploadCloud className="w-4 h-4 shrink-0 text-[#5B21F4]" />
-            <span>Upload Notes →</span>
-          </button>
-        </motion.div>
+            <button
+              type="button"
+              onClick={() => goTo('/pyqs')}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 h-[48px] rounded-full bg-gradient-to-r from-[#5B21F4] to-[#7C3AED] hover:from-[#4F1CD9] hover:to-[#6D28D9] text-white font-display font-bold text-[14px] sm:text-[15px] shadow-[0_8px_20px_rgba(91,33,244,0.30)] hover:shadow-[0_12px_26px_rgba(91,33,244,0.40)] hover:-translate-y-0.5 active:scale-98 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Search className="w-4 h-4 shrink-0" />
+              <span>Explore Resources →</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => goTo('/upload')}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 h-[48px] rounded-full bg-white/95 backdrop-blur-md border-[1.5px] border-[#5B21F4]/70 text-[#5B21F4] font-display font-bold text-[14px] sm:text-[15px] hover:bg-white hover:border-[#5B21F4] hover:-translate-y-0.5 active:scale-98 transition-all shadow-sm cursor-pointer whitespace-nowrap"
+            >
+              <UploadCloud className="w-4 h-4 shrink-0 text-[#5B21F4]" />
+              <span>Upload Notes →</span>
+            </button>
+          </motion.div>
+        </div>
 
         {/* 5. Statistics Row: Equal height aligned cards with balanced line spacing */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 w-full max-w-[580px] mb-3.5 sm:mb-5">
-          {/* Card 1: 131+ Students */}
+          {/* Card 1: Students */}
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -167,7 +227,9 @@ export default function HeroSection() {
           >
             <div className="flex items-center gap-1.5 text-[#5B21F4] mb-1">
               <Users className="w-4 h-4 shrink-0" />
-              <span className="text-xl sm:text-[22px] font-display font-bold text-[#101A63] leading-none">131+</span>
+              <span className="text-xl sm:text-[22px] font-display font-bold text-[#101A63] leading-none">
+                {platformStats.students}
+              </span>
             </div>
             <div className="min-h-[26px] flex items-center">
               <span className="text-[12px] sm:text-[13px] font-bold text-gray-800 leading-tight">Students</span>
@@ -175,7 +237,7 @@ export default function HeroSection() {
             <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium leading-none mt-0.5">Learning Together</p>
           </motion.div>
 
-          {/* Card 2: 49 Verified Resources */}
+          {/* Card 2: Verified Resources */}
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -184,7 +246,9 @@ export default function HeroSection() {
           >
             <div className="flex items-center gap-1.5 text-[#2563EB] mb-1">
               <FileText className="w-4 h-4 shrink-0" />
-              <span className="text-xl sm:text-[22px] font-display font-bold text-[#101A63] leading-none">49</span>
+              <span className="text-xl sm:text-[22px] font-display font-bold text-[#101A63] leading-none">
+                {platformStats.materials}
+              </span>
             </div>
             <div className="min-h-[26px] flex items-center">
               <span className="text-[12px] sm:text-[13px] font-bold text-gray-800 leading-tight">Verified Resources</span>
@@ -192,7 +256,7 @@ export default function HeroSection() {
             <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium leading-none mt-0.5">Quality Content</p>
           </motion.div>
 
-          {/* Card 3: 580 Coins Earned */}
+          {/* Card 3: Coins Distributed to all users */}
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -200,13 +264,15 @@ export default function HeroSection() {
             className="w-full h-[96px] p-3 sm:p-3.5 rounded-2xl bg-[#FFFDF7]/90 backdrop-blur-md border border-dashed border-amber-200/90 shadow-xs flex flex-col justify-center hover:-translate-y-1 hover:shadow-md transition-all duration-300"
           >
             <div className="flex items-center gap-1.5 text-amber-500 mb-1">
-              <Coins className="w-4 h-4 shrink-0" />
-              <span className="text-xl sm:text-[22px] font-display font-bold text-[#101A63] leading-none">580</span>
+              <Coins className="w-4 h-4 shrink-0 text-amber-500 fill-amber-400" />
+              <span className="text-lg sm:text-[21px] font-display font-bold text-[#101A63] leading-none">
+                {platformStats.coins}
+              </span>
             </div>
             <div className="min-h-[26px] flex items-center">
-              <span className="text-[12px] sm:text-[13px] font-bold text-gray-800 leading-tight">Coins Earned</span>
+              <span className="text-[12px] sm:text-[13px] font-bold text-gray-800 leading-tight">Coins Distributed</span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium leading-none mt-0.5">Share & Grow</p>
+            <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium leading-none mt-0.5">To All Students</p>
           </motion.div>
 
           {/* Card 4: 100% Community Driven */}
