@@ -36,6 +36,7 @@ import { useSidebar } from './SidebarContext';
 import ThemeToggle from '../ThemeToggle';
 import { downloadMaterialFile } from '../../utils/materials';
 import { searchAPI } from '../../services/api';
+import { isAdminEmail } from '../../utils/auth';
 
 export default function DashboardNavbar({
   title = 'Overview',
@@ -90,12 +91,30 @@ export default function DashboardNavbar({
         if (user && isMounted) {
           setUserId(user.id);
           
-          // Fetch verified user profile from public.users table
-          const { data: dbUser } = await supabase
+          // Fetch verified user profile from public.users table (by id or email)
+          let dbUser = null;
+          const { data: userById } = await supabase
             .from('users')
             .select('id, name, full_name, role, avatar_url, email')
             .eq('id', user.id)
             .maybeSingle();
+
+          if (userById) {
+            dbUser = userById;
+          } else if (user.email) {
+            const { data: userByEmail } = await supabase
+              .from('users')
+              .select('id, name, full_name, role, avatar_url, email')
+              .ilike('email', user.email)
+              .maybeSingle();
+            if (userByEmail) dbUser = userByEmail;
+          }
+
+          const userEmail = (dbUser?.email || user.email || '')?.toLowerCase()?.trim();
+          const isDirectAdmin = dbUser?.role === 'admin' ||
+                                user.app_metadata?.role === 'admin' ||
+                                user.user_metadata?.role === 'admin' ||
+                                isAdminEmail(userEmail);
 
           const resolvedName = dbUser?.full_name || 
                                dbUser?.name || 
@@ -104,7 +123,7 @@ export default function DashboardNavbar({
                                user.email?.split('@')[0] || 
                                'Student';
 
-          const actualRole = dbUser?.role || role || 'student';
+          const actualRole = isDirectAdmin ? 'admin' : (dbUser?.role || role || 'student');
           const formattedRole = actualRole === 'admin' ? 'Administrator' : 'Student';
           const resolvedAvatar = dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
 

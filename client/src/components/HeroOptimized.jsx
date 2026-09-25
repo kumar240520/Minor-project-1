@@ -4,6 +4,7 @@ import { Sparkles, ArrowRight, UploadCloud, ShieldCheck, Star, Zap, BookOpen, Us
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { isAdminEmail } from '../utils/auth';
 // OPTIMIZATION: Use React Query for efficient data fetching with caching
 import { usePlatformStats } from '../hooks/useOptimizedQueries';
 
@@ -37,13 +38,13 @@ const Hero = () => {
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
             setSession(currentSession);
-            if (currentSession?.user) fetchUserRole(currentSession.user.id);
+            if (currentSession?.user) fetchUserRole(currentSession.user.id, currentSession.user.email);
             else setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            if (session?.user) fetchUserRole(session.user.id);
+            if (session?.user) fetchUserRole(session.user.id, session.user.email);
             else {
                 setRole('student');
                 setLoading(false);
@@ -53,15 +54,29 @@ const Hero = () => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchUserRole = async (userId) => {
+    const fetchUserRole = async (userId, userEmail = null) => {
         try {
+            if (isAdminEmail(userEmail)) {
+                setRole('admin');
+                return;
+            }
+            let userRole = null;
             // OPTIMIZATION: Select only the role field, not all columns
             const { data } = await supabase
                 .from('users')
                 .select('role')
                 .eq('id', userId)
-                .single();
-            if (data) setRole(data.role);
+                .maybeSingle();
+            if (data?.role) userRole = data.role;
+            if (!userRole && userEmail) {
+                const { data: byEmail } = await supabase
+                    .from('users')
+                    .select('role')
+                    .ilike('email', userEmail)
+                    .maybeSingle();
+                if (byEmail?.role) userRole = byEmail.role;
+            }
+            if (userRole) setRole(userRole);
         } finally {
             setLoading(false);
         }

@@ -132,11 +132,21 @@ export class InvalidUserRoleError extends Error {
   }
 }
 
+export const isAdminEmail = (email) => {
+  if (!email) return false;
+  const lower = email.toLowerCase().trim();
+  return lower === 'admin.ies@ipsacademy.org' || 
+         lower === 'myadmin.ies@ipsacademy.org' ||
+         lower === 'hiteshkumar240520040@gmail.com' ||
+         lower === 'hiteshkumar242004@gmail.com' ||
+         lower === 'hiteshkumarparida24@gmail.com';
+};
+
 export const getRedirectPathForRole = (role, profile = null) => {
+  const email = (profile?.email || '')?.toLowerCase()?.trim();
   const isAdmin = role === 'admin' || 
                   profile?.role === 'admin' || 
-                  profile?.email === 'admin.ies@ipsacademy.org' || 
-                  profile?.email === 'myadmin.ies@ipsacademy.org';
+                  isAdminEmail(email);
 
   if (isAdmin) {
     return '/admin/dashboard';
@@ -194,18 +204,56 @@ export const getAuthenticatedUser = async () => {
   return user;
 };
 
-export const fetchUserProfile = async (userId) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
+export const fetchUserProfile = async (userId, userEmail = null) => {
+  let data = null;
+  let error = null;
+
+  if (userId) {
+    const res = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+    data = res.data;
+    error = res.error;
+  }
+
+  if (!data && userEmail) {
+    const res = await supabase
+      .from('users')
+      .select('*')
+      .ilike('email', userEmail.trim())
+      .maybeSingle();
+    if (res.data) {
+      data = res.data;
+      error = null;
+    }
+  }
 
   if (error) {
     throw error;
   }
 
+  if (!data) {
+    if (isAdminEmail(userEmail)) {
+      return {
+        id: userId,
+        email: userEmail,
+        role: 'admin',
+        onboarding_completed: true,
+        is_profile_complete: true
+      };
+    }
+    throw new MissingUserRoleError();
+  }
+
   if (!data?.role) {
+    if (isAdminEmail(userEmail || data?.email)) {
+      data.role = 'admin';
+      data.onboarding_completed = true;
+      data.is_profile_complete = true;
+      return data;
+    }
     throw new MissingUserRoleError();
   }
 
@@ -221,6 +269,17 @@ export const initializeStudentProfileForUser = async (user) => {
     throw new Error('No authenticated user was available to initialize a student profile.');
   }
 
+  const userEmail = user.email?.toLowerCase()?.trim();
+  if (isAdminEmail(userEmail) || user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin') {
+    return {
+      id: user.id,
+      email: user.email,
+      role: 'admin',
+      onboarding_completed: true,
+      is_profile_complete: true
+    };
+  }
+
   // Try to get the real name from multiple sources in order of preference
   const realName = getTrimmedString(user?.user_metadata?.full_name) ||
                    getTrimmedString(user?.user_metadata?.name) ||
@@ -233,7 +292,7 @@ export const initializeStudentProfileForUser = async (user) => {
     fullName: realName,
   });
 
-  return fetchUserProfile(user.id);
+  return fetchUserProfile(user.id, user.email);
 };
 
 export const getAuthenticatedUserWithRole = async ({ initializeStudentProfile = false } = {}) => {
@@ -243,11 +302,42 @@ export const getAuthenticatedUserWithRole = async ({ initializeStudentProfile = 
     return { user: null, role: null, profile: null };
   }
 
+  const userEmail = user.email?.toLowerCase()?.trim();
+  const isDirectAdmin = user.app_metadata?.role === 'admin' ||
+                        user.user_metadata?.role === 'admin' ||
+                        isAdminEmail(userEmail);
+
   let profile;
 
   try {
-    profile = await fetchUserProfile(user.id);
+    profile = await fetchUserProfile(user.id, userEmail);
+    if (isDirectAdmin && profile.role !== 'admin') {
+      profile.role = 'admin';
+      profile.onboarding_completed = true;
+      profile.is_profile_complete = true;
+    }
   } catch (error) {
+    // Check if email already has role of admin in the database
+    const { data: emailUser } = await supabase
+      .from('users')
+      .select('*')
+      .ilike('email', userEmail)
+      .maybeSingle();
+
+    if (emailUser?.role === 'admin' || isDirectAdmin) {
+      return {
+        user,
+        role: 'admin',
+        profile: emailUser || {
+          id: user.id,
+          email: user.email,
+          role: 'admin',
+          onboarding_completed: true,
+          is_profile_complete: true
+        }
+      };
+    }
+
     if (!(initializeStudentProfile && error instanceof MissingUserRoleError)) {
       throw error;
     }
@@ -263,6 +353,30 @@ export const getAuthenticatedUserWithRole = async ({ initializeStudentProfile = 
 };
 
 export const ensureStudentProfile = async ({ id, email, fullName }) => {
+  const lowerEmail = email?.toLowerCase()?.trim();
+
+  // CRITICAL CHECK: If this email already has the role of admin in the database or system,
+  // NEVER downgrade or overwrite them to student!
+  if (isAdminEmail(lowerEmail)) {
+    console.log("ensureStudentProfile skipped for admin email:", lowerEmail);
+    return;
+  }
+
+  try {
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id, role')
+      .or(`id.eq.${id},email.ilike.${lowerEmail}`)
+      .maybeSingle();
+
+    if (existingUser?.role === 'admin') {
+      console.log("ensureStudentProfile skipped for existing admin record:", lowerEmail);
+      return;
+    }
+  } catch (checkErr) {
+    console.warn("Could not check existing role before ensureStudentProfile:", checkErr);
+  }
+
   // Use the provided fullName if available, otherwise fall back to email-based name
   const displayName = fullName || getDisplayName({ email });
   

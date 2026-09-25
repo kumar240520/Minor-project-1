@@ -14,7 +14,7 @@ import {
 import Layout from '../components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { getDisplayName, getFirstName, initializeStudentProfileForUser } from '../utils/auth';
+import { getDisplayName, getFirstName, initializeStudentProfileForUser, isAdminEmail } from '../utils/auth';
 import {
   DashboardPage,
   DashboardCard,
@@ -47,16 +47,42 @@ const Dashboard = () => {
         if (authError || !user) throw authError || new Error("Not logged in");
 
         // 2. Fetch User Profile Data
-        let profileData;
+        let profileData = null;
         try {
           const result = await supabase
             .from('users')
             .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
           profileData = result.data;
         } catch (err) {
-          console.warn('Profile fetch warning:', err);
+          console.warn('Profile fetch warning by id:', err);
+        }
+
+        if (!profileData && user.email) {
+          try {
+            const result = await supabase
+              .from('users')
+              .select('*')
+              .ilike('email', user.email)
+              .maybeSingle();
+            profileData = result.data;
+          } catch (err) {
+            console.warn('Profile fetch warning by email:', err);
+          }
+        }
+
+        const userEmail = (profileData?.email || user.email)?.toLowerCase()?.trim();
+        // If user is an admin, route directly to the admin dashboard
+        const isAdmin = profileData?.role === 'admin' ||
+                        user.app_metadata?.role === 'admin' ||
+                        user.user_metadata?.role === 'admin' ||
+                        isAdminEmail(userEmail) ||
+                        isAdminEmail(profileData?.email);
+
+        if (isAdmin) {
+          navigate('/admin/dashboard', { replace: true });
+          return;
         }
 
         if (!profileData) {
@@ -74,16 +100,6 @@ const Dashboard = () => {
         }
 
         setUserData(profileData);
-
-        // If user is an admin, route directly to the admin dashboard
-        const isAdmin = profileData?.role === 'admin' ||
-                        profileData?.email === 'admin.ies@ipsacademy.org' ||
-                        profileData?.email === 'myadmin.ies@ipsacademy.org';
-
-        if (isAdmin) {
-          navigate('/admin/dashboard', { replace: true });
-          return;
-        }
 
         // Immediate redirect if student onboarding is not completed
         if (profileData && profileData.onboarding_completed !== true) {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { isAdminEmail } from '../utils/auth';
 
 const ProtectedRoute = ({ children }) => {
     const [session, setSession] = useState(null);
@@ -31,24 +32,50 @@ const ProtectedRoute = ({ children }) => {
                 setSession(sessionData);
 
                 if (sessionData?.user) {
-                    const { data: profile, error } = await supabase
+                    const userEmail = sessionData.user.email?.toLowerCase().trim();
+                    const userId = sessionData.user.id;
+
+                    // 1. Fetch profile by id first, or fallback to email
+                    let profile = null;
+                    const { data: profileById } = await supabase
                         .from('users')
-                        .select('id, role, onboarding_completed, is_profile_complete')
-                        .eq('id', sessionData.user.id)
+                        .select('id, email, role, onboarding_completed, is_profile_complete')
+                        .eq('id', userId)
                         .maybeSingle();
+
+                    if (profileById) {
+                        profile = profileById;
+                    } else if (userEmail) {
+                        const { data: profileByEmail } = await supabase
+                            .from('users')
+                            .select('id, email, role, onboarding_completed, is_profile_complete')
+                            .ilike('email', userEmail)
+                            .maybeSingle();
+                        if (profileByEmail) {
+                            profile = profileByEmail;
+                        }
+                    }
 
                     if (!mounted) return;
 
+                    // Criteria check: does user or email have the role of admin?
+                    const isSessionAdmin = profile?.role === 'admin' ||
+                                           sessionData.user.app_metadata?.role === 'admin' ||
+                                           sessionData.user.user_metadata?.role === 'admin' ||
+                                           isAdminEmail(userEmail) ||
+                                           isAdminEmail(profile?.email);
+
                     if (profile) {
+                        if (isSessionAdmin && profile.role !== 'admin') {
+                            profile.role = 'admin';
+                            profile.onboarding_completed = true;
+                            profile.is_profile_complete = true;
+                        }
                         setUserProfile(profile);
                     } else {
-                        // If record doesn't exist yet, check if admin before defaulting to pending student
-                        const isSessionAdmin = sessionData.user.email === 'admin.ies@ipsacademy.org' || 
-                                               sessionData.user.email === 'myadmin.ies@ipsacademy.org' ||
-                                               sessionData.user.app_metadata?.role === 'admin' ||
-                                               sessionData.user.user_metadata?.role === 'admin';
                         setUserProfile({
-                            id: sessionData.user.id,
+                            id: userId,
+                            email: userEmail,
                             role: isSessionAdmin ? 'admin' : 'student',
                             onboarding_completed: isSessionAdmin,
                             is_profile_complete: isSessionAdmin
@@ -59,10 +86,9 @@ const ProtectedRoute = ({ children }) => {
                 }
             } catch (error) {
                 console.error('ProtectedRoute check error:', error);
-                if (mounted) {
-                    setSession(null);
-                    setUserProfile(null);
-                }
+                if (!mounted) return;
+                setSession(null);
+                setUserProfile(null);
             } finally {
                 if (mounted) {
                     setLoading(false);
@@ -111,12 +137,14 @@ const ProtectedRoute = ({ children }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Admin check: any user with role 'admin' in database or metadata, or system root admin emails
+    const userEmail = session?.user?.email?.toLowerCase().trim();
+    // Admin check: if email/user has the role of admin, onboarding form must NEVER show
     const isAdmin = userProfile?.role === 'admin' ||
                     session?.user?.app_metadata?.role === 'admin' ||
                     session?.user?.user_metadata?.role === 'admin' ||
-                    session?.user?.email === 'admin.ies@ipsacademy.org' || 
-                    session?.user?.email === 'myadmin.ies@ipsacademy.org';
+                    isAdminEmail(userEmail) ||
+                    isAdminEmail(userProfile?.email);
+
     const isOnboardingComplete = Boolean(userProfile?.onboarding_completed);
 
     if (isAdmin) {
@@ -126,8 +154,8 @@ const ProtectedRoute = ({ children }) => {
             return <Navigate to="/admin/dashboard" replace />;
         }
     } else {
-        // UNAVOIDABLE ONBOARDING FOR STUDENTS:
-        // Any student who has not completed onboarding CANNOT access any protected pages
+        // If email doesn't have the role of admin:
+        // Onboarding form shows up for any student who has not completed onboarding
         if (!isOnboardingComplete && location.pathname !== '/onboarding') {
             return <Navigate to="/onboarding" replace />;
         }

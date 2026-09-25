@@ -3,6 +3,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Users, FileText, CalendarCheck, Award, Sparkles, ArrowRight, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { isAdminEmail } from '../utils/auth';
 
 const Counter = ({ from, to, duration = 2, suffix = "" }) => {
     const [count, setCount] = useState(from);
@@ -80,13 +81,13 @@ const StatsAndCTA = () => {
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
             setSession(currentSession);
-            if (currentSession?.user) fetchUserRole(currentSession.user.id);
+            if (currentSession?.user) fetchUserRole(currentSession.user.id, currentSession.user.email);
             else setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            if (session?.user) fetchUserRole(session.user.id);
+            if (session?.user) fetchUserRole(session.user.id, session.user.email);
             else {
                 setRole('student');
                 setLoading(false);
@@ -187,10 +188,20 @@ const StatsAndCTA = () => {
         }
     };
 
-    const fetchUserRole = async (userId) => {
+    const fetchUserRole = async (userId, userEmail = null) => {
         try {
-            const { data } = await supabase.from('users').select('role').eq('id', userId).single();
-            if (data) setRole(data.role);
+            if (isAdminEmail(userEmail)) {
+                setRole('admin');
+                return;
+            }
+            let userRole = null;
+            const { data } = await supabase.from('users').select('role').eq('id', userId).maybeSingle();
+            if (data?.role) userRole = data.role;
+            if (!userRole && userEmail) {
+                const { data: byEmail } = await supabase.from('users').select('role').ilike('email', userEmail).maybeSingle();
+                if (byEmail?.role) userRole = byEmail.role;
+            }
+            if (userRole) setRole(userRole);
         } finally {
             setLoading(false);
         }

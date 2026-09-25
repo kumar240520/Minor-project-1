@@ -26,7 +26,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { getDisplayName } from '../utils/auth';
+import { getDisplayName, isAdminEmail } from '../utils/auth';
 
 const POPULAR_BRANCHES = [
   'Computer Science & Eng (CSE)',
@@ -118,19 +118,35 @@ const Onboarding = () => {
         const isGoogle = provider === 'google' || identities.some(i => i.provider === 'google');
         setIsGoogleUser(isGoogle);
 
-        // Fetch DB row
-        const { data: profile } = await supabase
+        const userEmail = user.email?.toLowerCase().trim();
+
+        // Fetch DB row by id first, or by email
+        let profile = null;
+        const { data: profileById } = await supabase
           .from('users')
           .select('*')
           .eq('id', user.id)
           .maybeSingle();
 
-        // Admin-level users should never fill or see student onboarding
+        if (profileById) {
+          profile = profileById;
+        } else if (userEmail) {
+          const { data: profileByEmail } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('email', userEmail)
+            .maybeSingle();
+          if (profileByEmail) {
+            profile = profileByEmail;
+          }
+        }
+
+        // CRITERIA: If email has the role of admin, onboarding form must NEVER show up!
         const isAdmin = profile?.role === 'admin' || 
                         user.app_metadata?.role === 'admin' ||
                         user.user_metadata?.role === 'admin' ||
-                        user.email === 'admin.ies@ipsacademy.org' || 
-                        user.email === 'myadmin.ies@ipsacademy.org';
+                        isAdminEmail(userEmail) ||
+                        isAdminEmail(profile?.email);
 
         if (isAdmin) {
           navigate('/admin/dashboard', { replace: true });

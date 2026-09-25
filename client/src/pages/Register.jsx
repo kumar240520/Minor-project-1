@@ -17,7 +17,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { ensureStudentProfile, isValidInstitutionalEmail, fetchAuthPolicy, getAuthenticatedUserWithRole, getRedirectPathForRole } from '../utils/auth';
+import { ensureStudentProfile, isValidInstitutionalEmail, fetchAuthPolicy, getAuthenticatedUserWithRole, getRedirectPathForRole, isAdminEmail } from '../utils/auth';
 import { authAPI } from '../services/api';
 import { useOTP } from '../hooks/useOTP';
 import OTPInput from '../components/OTPInput';
@@ -210,7 +210,7 @@ const Register = () => {
         console.warn('Profile initialization note:', pErr.message);
       }
 
-      let redirectPath = '/onboarding';
+      let redirectPath = isAdminEmail(pendingUserData?.email) ? '/admin/dashboard' : '/onboarding';
       try {
         const { role, profile } = await getAuthenticatedUserWithRole({ initializeStudentProfile: false });
         redirectPath = getRedirectPathForRole(role, profile);

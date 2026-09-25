@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
-import { getAuthenticatedUserWithRole, MissingUserRoleError } from '../../utils/auth';
+import { getAuthenticatedUserWithRole, MissingUserRoleError, isAdminEmail } from '../../utils/auth';
 
 const AdminGuard = ({ children }) => {
   const [status, setStatus] = useState('loading');
@@ -12,7 +12,7 @@ const AdminGuard = ({ children }) => {
 
     const checkAdminAccess = async () => {
       try {
-        const { user, role } = await getAuthenticatedUserWithRole();
+        const { user, role, profile } = await getAuthenticatedUserWithRole();
 
         if (!isMounted) {
           return;
@@ -23,7 +23,15 @@ const AdminGuard = ({ children }) => {
           return;
         }
 
-        setStatus(role === 'admin' ? 'authorized' : 'forbidden');
+        const userEmail = (profile?.email || user.email)?.toLowerCase()?.trim();
+        const isAdmin = role === 'admin' || 
+                        profile?.role === 'admin' ||
+                        user.app_metadata?.role === 'admin' ||
+                        user.user_metadata?.role === 'admin' ||
+                        isAdminEmail(userEmail) ||
+                        isAdminEmail(profile?.email);
+
+        setStatus(isAdmin ? 'authorized' : 'forbidden');
       } catch (error) {
         console.error('Admin guard failed:', error);
 
