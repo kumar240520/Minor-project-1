@@ -6,42 +6,70 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminGuard from './components/admin/AdminGuard';
 import { SidebarProvider } from './components/Sidebar';
 import { ThemeProvider } from './context/ThemeContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const EmailVerification = lazy(() => import('./pages/EmailVerification'));
-const AuthCallback = lazy(() => import('./pages/AuthCallback'));
-const Onboarding = lazy(() => import('./pages/Onboarding'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const ResetPasswordOTP = lazy(() => import('./pages/ResetPasswordOTP'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const PYQ = lazy(() => import('./pages/PYQ'));
-const PlacementMaterials = lazy(() => import('./pages/PlacementMaterials'));
-const CommunityPost = lazy(() => import('./pages/CommunityPost'));
-const MyMaterials = lazy(() => import('./pages/MyMaterials'));
-const Calendar = lazy(() => import('./pages/Calendar'));
-const Rewards = lazy(() => import('./pages/Rewards'));
-const Settings = lazy(() => import('./pages/Settings'));
-const Upload = lazy(() => import('./pages/Upload'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Help = lazy(() => import('./pages/Help'));
-const SupportHelp = lazy(() => import('./pages/SupportHelp'));
+// Resilient lazy import that automatically recovers from stale chunk errors after new deployments
+const safeLazy = (importFn) =>
+  lazy(async () => {
+    try {
+      return await importFn();
+    } catch (error) {
+      console.warn('Chunk load error in route, attempting auto-reload...', error);
+      const isChunkError =
+        error?.message?.includes('dynamically imported module') ||
+        error?.message?.includes('MIME type') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('Importing a module script failed') ||
+        error?.name === 'TypeError';
 
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const AdminApprovals = lazy(() => import('./pages/admin/AdminApprovals'));
-const AdminMaterials = lazy(() => import('./pages/admin/AdminMaterials'));
-const AdminPYQs = lazy(() => import('./pages/admin/AdminPYQs'));
-const AdminRewards = lazy(() => import('./pages/admin/AdminRewards'));
-const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
-const AdminTransactions = lazy(() => import('./pages/admin/AdminTransactions'));
-const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
-const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
-const AdminTickets = lazy(() => import('./pages/admin/AdminTickets'));
-const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
-const AdminCommitteePosts = lazy(() => import('./pages/admin/AdminCommitteePosts'));
-const AdminBulkEmail = lazy(() => import('./pages/admin/AdminBulkEmail'));
-const AdminAuthSettings = lazy(() => import('./pages/admin/AdminAuthSettings'));
+      const lastReload = Number(sessionStorage.getItem('last_chunk_reload') || 0);
+      const now = Date.now();
+
+      if (isChunkError && now - lastReload > 8000) {
+        sessionStorage.setItem('last_chunk_reload', String(now));
+        window.location.reload();
+        return new Promise(() => {});
+      }
+
+      throw error;
+    }
+  });
+
+const Login = safeLazy(() => import('./pages/Login'));
+const Register = safeLazy(() => import('./pages/Register'));
+const EmailVerification = safeLazy(() => import('./pages/EmailVerification'));
+const AuthCallback = safeLazy(() => import('./pages/AuthCallback'));
+const Onboarding = safeLazy(() => import('./pages/Onboarding'));
+const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = safeLazy(() => import('./pages/ResetPassword'));
+const ResetPasswordOTP = safeLazy(() => import('./pages/ResetPasswordOTP'));
+const Dashboard = safeLazy(() => import('./pages/Dashboard'));
+const PYQ = safeLazy(() => import('./pages/PYQ'));
+const PlacementMaterials = safeLazy(() => import('./pages/PlacementMaterials'));
+const CommunityPost = safeLazy(() => import('./pages/CommunityPost'));
+const MyMaterials = safeLazy(() => import('./pages/MyMaterials'));
+const Calendar = safeLazy(() => import('./pages/Calendar'));
+const Rewards = safeLazy(() => import('./pages/Rewards'));
+const Settings = safeLazy(() => import('./pages/Settings'));
+const Upload = safeLazy(() => import('./pages/Upload'));
+const Profile = safeLazy(() => import('./pages/Profile'));
+const Help = safeLazy(() => import('./pages/Help'));
+const SupportHelp = safeLazy(() => import('./pages/SupportHelp'));
+
+const AdminDashboard = safeLazy(() => import('./pages/admin/AdminDashboard'));
+const AdminApprovals = safeLazy(() => import('./pages/admin/AdminApprovals'));
+const AdminMaterials = safeLazy(() => import('./pages/admin/AdminMaterials'));
+const AdminPYQs = safeLazy(() => import('./pages/admin/AdminPYQs'));
+const AdminRewards = safeLazy(() => import('./pages/admin/AdminRewards'));
+const AdminUsers = safeLazy(() => import('./pages/admin/AdminUsers'));
+const AdminTransactions = safeLazy(() => import('./pages/admin/AdminTransactions'));
+const AdminReports = safeLazy(() => import('./pages/admin/AdminReports'));
+const AdminEvents = safeLazy(() => import('./pages/admin/AdminEvents'));
+const AdminTickets = safeLazy(() => import('./pages/admin/AdminTickets'));
+const AdminAnalytics = safeLazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminCommitteePosts = safeLazy(() => import('./pages/admin/AdminCommitteePosts'));
+const AdminBulkEmail = safeLazy(() => import('./pages/admin/AdminBulkEmail'));
+const AdminAuthSettings = safeLazy(() => import('./pages/admin/AdminAuthSettings'));
 
 const RouteLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">
@@ -55,7 +83,8 @@ function App() {
       <Router>
         <SidebarProvider>
           <div className="font-sans text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-950 min-h-screen selection:bg-violet-500 selection:text-white transition-colors duration-200">
-            <Suspense fallback={<RouteLoader />}>
+            <ErrorBoundary>
+              <Suspense fallback={<RouteLoader />}>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
@@ -98,7 +127,8 @@ function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
-          </div>
+          </ErrorBoundary>
+        </div>
         </SidebarProvider>
       </Router>
     </ThemeProvider>
