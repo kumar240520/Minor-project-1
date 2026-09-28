@@ -484,6 +484,7 @@ const Register = () => {
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     status={otpStatus}
+                    autoFocus={true}
                     disabled={isVerifyingOTP}
                   />
                 </div>

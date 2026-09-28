@@ -569,6 +569,7 @@ const Login = () => {
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
                   status={otpStatus}
+                  autoFocus={true}
                   disabled={isVerifyingOTP}
                 />
               </div>

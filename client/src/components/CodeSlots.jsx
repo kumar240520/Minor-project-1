@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { animate, motion, motionValue, useMotionValue, useReducedMotion, useTransform } from 'motion/react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Tick02Icon } from '@hugeicons/core-free-icons';
@@ -26,7 +26,7 @@ const firstEmptyOf = slots => {
 };
 const isFull = slots => slots.every(Boolean);
 
-export default function CodeSlots({
+const CodeSlots = forwardRef(function CodeSlots({
   length = 6,
   value,
   defaultValue = '',
@@ -36,7 +36,7 @@ export default function CodeSlots({
   mask = false,
   caret = true,
   disabled = false,
-  autoFocus = false,
+  autoFocus = true,
   accentColor,
   inkColor,
   slotColor,
@@ -51,7 +51,7 @@ export default function CodeSlots({
   cascade = 20,
   ariaLabel = 'One-time code',
   className = ''
-}) {
+}, ref) {
   const uid = useId();
   const reduce = useReducedMotion();
   const inputRef = useRef(null);
@@ -350,9 +350,52 @@ export default function CodeSlots({
     statusRef.current = status;
   }, [status]);
   useEffect(() => () => clearTimeout(drainTimer.current), []);
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      setFocused(true);
+      jumpActive(firstEmptyOf(slotsRef.current));
+      inputRef.current?.focus({ preventScroll: true });
+    },
+    blur: () => {
+      inputRef.current?.blur();
+      setFocused(false);
+    }
+  }));
+
   useEffect(() => {
-    if (autoFocus) inputRef.current?.focus();
-  }, [autoFocus]);
+    if (autoFocus && !disabled) {
+      setFocused(true);
+      jumpActive(firstEmptyOf(slotsRef.current));
+
+      const focusInput = () => {
+        if (inputRef.current && document.activeElement !== inputRef.current) {
+          inputRef.current.focus({ preventScroll: true });
+        }
+      };
+
+      focusInput();
+      const raf = requestAnimationFrame(focusInput);
+      const timer = setTimeout(focusInput, 60);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+      };
+    }
+  }, [autoFocus, disabled, jumpActive]);
+
+  useEffect(() => {
+    if (autoFocus && !disabled && (value === '' || !value)) {
+      setFocused(true);
+      jumpActive(0);
+      const timer = setTimeout(() => {
+        if (inputRef.current && document.activeElement !== inputRef.current) {
+          inputRef.current.focus({ preventScroll: true });
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [value, autoFocus, disabled, jumpActive]);
 
   const view = slots.length === length ? slots : Array.from({ length }, (_, i) => slots[i] ?? '');
   const showCaret =
@@ -399,6 +442,7 @@ export default function CodeSlots({
           aria-describedby={`${uid}-count`}
           disabled={disabled}
           readOnly={status === 'success'}
+          autoFocus={autoFocus}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
           onChange={onInput}
@@ -435,7 +479,9 @@ export default function CodeSlots({
       </span>
     </div>
   );
-}
+});
+
+export default CodeSlots;
 
 function Slot({ mv, drop, char, active, rise, sink }) {
   const [shown, setShown] = useState(char);

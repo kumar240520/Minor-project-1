@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import CodeSlots from './CodeSlots';
 
-const OTPInput = ({ 
+const OTPInput = forwardRef(({ 
   otp, 
   onChange, 
   onCodeChange,
@@ -9,13 +9,14 @@ const OTPInput = ({
   onPaste, 
   disabled = false,
   status = 'idle',
+  autoFocus = true,
   onComplete,
   length = 6,
   slotSize = 46,
   gap = 8,
   radius = 12,
   className = ''
-}) => {
+}, ref) => {
   const codeValue = Array.isArray(otp) ? otp.join('') : String(otp ?? '');
 
   const handleChange = (newCode) => {
@@ -34,19 +35,21 @@ const OTPInput = ({
   return (
     <div className={`flex justify-center items-center w-full my-2.5 overflow-x-auto py-1 ${className}`}>
       <CodeSlots
+        ref={ref}
         length={length}
         value={codeValue}
         onChange={handleChange}
         onComplete={onComplete}
         status={status}
         disabled={disabled}
+        autoFocus={autoFocus}
         slotSize={slotSize}
         gap={gap}
         radius={radius}
       />
     </div>
   );
-};
+});
 
 export { CodeSlots };
 export default OTPInput;
