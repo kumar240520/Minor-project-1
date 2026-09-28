@@ -77,6 +77,7 @@ const Register = () => {
   const [currentStep, setCurrentStep] = useState('form'); // 'form' | 'otp'
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+  const [otpStatus, setOtpStatus] = useState('idle');
   const [pendingUserData, setPendingUserData] = useState(null);
 
   // OTP hook
@@ -179,6 +180,7 @@ const Register = () => {
         name: pendingUserData.name
       });
 
+      setOtpStatus('success');
       setSuccessMsg('Email verified & account registered successfully! Signing you in...');
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -223,9 +225,9 @@ const Register = () => {
       }, 1000);
 
     } catch (err) {
+      setOtpStatus('error');
       if (err.message?.includes('Invalid OTP') || err.message?.includes('expired') || err.message?.includes('digits')) {
         setError(err.message || 'Invalid or expired OTP code. Please check your code or request a new one.');
-        clearOtp();
         allowResend();
       } else {
         setError(err.message || 'Failed to complete registration. Please try again.');
@@ -239,6 +241,7 @@ const Register = () => {
   const handleResendOTP = async () => {
     setError(null);
     setSuccessMsg(null);
+    setOtpStatus('idle');
     setIsSendingOTP(true);
 
     try {
@@ -259,6 +262,7 @@ const Register = () => {
 
   const handleBackToForm = () => {
     setCurrentStep('form');
+    setOtpStatus('idle');
     clearOtp();
     setError(null);
     setSuccessMsg(null);
@@ -473,9 +477,13 @@ const Register = () => {
                   </label>
                   <OTPInput
                     otp={otp}
-                    onChange={handleOtpChange}
+                    onChange={(val, idx) => {
+                      if (otpStatus !== 'idle') setOtpStatus('idle');
+                      handleOtpChange(val, idx);
+                    }}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
+                    status={otpStatus}
                     disabled={isVerifyingOTP}
                   />
                 </div>

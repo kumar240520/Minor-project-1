@@ -1,78 +1,52 @@
-import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
+import CodeSlots from './CodeSlots';
 
 const OTPInput = ({ 
   otp, 
   onChange, 
+  onCodeChange,
   onKeyDown, 
   onPaste, 
-  disabled = false 
+  disabled = false,
+  status = 'idle',
+  onComplete,
+  length = 6,
+  slotSize = 46,
+  gap = 8,
+  radius = 12,
+  className = ''
 }) => {
-  const inputRefs = useRef([]);
+  const codeValue = Array.isArray(otp) ? otp.join('') : String(otp ?? '');
 
-  // Focus first input on mount
-  useEffect(() => {
-    if (inputRefs.current[0] && !disabled) {
-      inputRefs.current[0].focus();
+  const handleChange = (newCode) => {
+    if (typeof onCodeChange === 'function') {
+      onCodeChange(newCode);
     }
-  }, [disabled]);
-
-  // Handle input change
-  const handleChange = (value, index) => {
-    // Only allow numbers
-    const numericValue = value.replace(/\D/g, '');
-    onChange(numericValue.slice(-1), index); // Take only last character
-
-    // Auto-focus next input
-    if (numericValue && index < otp.length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  // Handle key down
-  const handleKeyDown = (e, index) => {
-    onKeyDown(e, index);
-    
-    // Move to next input on arrow right
-    if (e.key === 'ArrowRight' && index < otp.length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-    
-    // Move to previous input on arrow left
-    if (e.key === 'ArrowLeft' && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (typeof onChange === 'function') {
+      const clean = String(newCode || '').replace(/\D/g, '').slice(0, length);
+      for (let i = 0; i < length; i++) {
+        const char = clean[i] || '';
+        onChange(char, i);
+      }
     }
   };
 
   return (
-    <div className="flex justify-center space-x-1.5 sm:space-x-2.5 w-full max-w-full overflow-hidden px-1">
-      {otp.map((digit, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1, duration: 0.3 }}
-        >
-          <input
-            ref={(el) => (inputRefs.current[index] = el)}
-            id={`otp-${index}`}
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]"
-            maxLength={1}
-            value={digit}
-            onChange={(e) => handleChange(e.target.value, index)}
-            onKeyDown={(e) => handleKeyDown(e, index)}
-            onPaste={index === 0 ? onPaste : undefined}
-            disabled={disabled}
-            className="w-8 h-9 sm:w-11 sm:h-11 text-center text-base sm:text-xl font-bold rounded-lg sm:rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            placeholder="0"
-            autoComplete="off"
-          />
-        </motion.div>
-      ))}
+    <div className={`flex justify-center items-center w-full my-2.5 overflow-x-auto py-1 ${className}`}>
+      <CodeSlots
+        length={length}
+        value={codeValue}
+        onChange={handleChange}
+        onComplete={onComplete}
+        status={status}
+        disabled={disabled}
+        slotSize={slotSize}
+        gap={gap}
+        radius={radius}
+      />
     </div>
   );
 };
 
+export { CodeSlots };
 export default OTPInput;

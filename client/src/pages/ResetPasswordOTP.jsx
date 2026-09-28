@@ -21,6 +21,7 @@ const ResetPasswordOTP = () => {
     const [currentStep, setCurrentStep] = useState('otp'); // 'otp' | 'password'
     const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
     const [isSendingOTP, setIsSendingOTP] = useState(false);
+    const [otpStatus, setOtpStatus] = useState('idle');
     
     // OTP hook
     const {
@@ -64,12 +65,15 @@ const ResetPasswordOTP = () => {
                 throw error;
             }
 
+            setOtpStatus('success');
             setSuccessMsg('OTP verified! Please set your new password.');
-            setCurrentStep('password');
+            setTimeout(() => {
+                setCurrentStep('password');
+            }, 800);
         } catch (err) {
             console.error('Verify OTP Error:', err);
+            setOtpStatus('error');
             setError(err.message || 'Failed to verify OTP. Please try again.');
-            clearOtp();
         } finally {
             setIsVerifyingOTP(false);
         }
@@ -79,6 +83,7 @@ const ResetPasswordOTP = () => {
     const handleResendOTP = async () => {
         setError(null);
         setSuccessMsg(null);
+        setOtpStatus('idle');
         setIsSendingOTP(true);
 
         try {
@@ -235,9 +240,13 @@ const ResetPasswordOTP = () => {
                                     </label>
                                     <OTPInput
                                         otp={otp}
-                                        onChange={handleOtpChange}
+                                        onChange={(val, idx) => {
+                                            if (otpStatus !== 'idle') setOtpStatus('idle');
+                                            handleOtpChange(val, idx);
+                                        }}
                                         onKeyDown={handleKeyDown}
                                         onPaste={handlePaste}
+                                        status={otpStatus}
                                         disabled={isVerifyingOTP}
                                     />
                                 </div>

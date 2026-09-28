@@ -37,12 +37,20 @@ export const useOTP = () => {
     setCanResend(false);
   }, []);
 
-  // Handle OTP input change
+  // Handle OTP input change with functional updater
   const handleOtpChange = useCallback((value, index) => {
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-  }, [otp]);
+    setOtp((prev) => {
+      const newOtp = [...prev];
+      newOtp[index] = value;
+      return newOtp;
+    });
+  }, []);
+
+  // Bulk set full OTP string (e.g. from CodeSlots)
+  const setOtpString = useCallback((code) => {
+    const digits = String(code || '').replace(/\D/g, '').slice(0, OTP_LENGTH);
+    setOtp(Array.from({ length: OTP_LENGTH }, (_, i) => digits[i] || ''));
+  }, []);
 
   // Handle OTP input keydown for auto-focus
   const handleKeyDown = useCallback((e, index) => {
@@ -108,6 +116,7 @@ export const useOTP = () => {
     clearOtp,
     getOtpString,
     isOtpComplete,
+    setOtpString,
     startTimer,
     allowResend
   };
