@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { animate, motion, motionValue, useMotionValue, useReducedMotion, useTransform } from 'motion/react';
+import { animate, motion, motionValue, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Tick02Icon } from '@hugeicons/core-free-icons';
 

@@ -18,34 +18,34 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) {
-            return
+            return;
           }
 
-          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-            return 'react-vendor'
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'react-vendor';
+          }
+
+          if (/[\\/]node_modules[\\/](framer-motion|motion|motion-dom)[\\/]/.test(id)) {
+            return 'motion';
           }
 
           if (id.includes('@supabase')) {
-            return 'supabase'
+            return 'supabase';
           }
 
           if (id.includes('recharts') || id.includes('d3-')) {
-            return 'charts'
-          }
-
-          if (id.includes('framer-motion') || id.includes('motion-dom')) {
-            return 'motion'
+            return 'charts';
           }
 
           if (id.includes('date-fns')) {
-            return 'date-fns'
+            return 'date-fns';
           }
 
-          if (id.includes('lucide-react')) {
-            return 'icons'
+          if (id.includes('lucide-react') || id.includes('@hugeicons')) {
+            return 'icons';
           }
 
-          return undefined
+          return undefined;
         },
       },
     },
