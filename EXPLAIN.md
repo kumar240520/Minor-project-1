@@ -1,12 +1,12 @@
-﻿# ðŸŽ“ EduSure â€” Project Architecture & Workflow Documentation
+# 🎓 EduSure — Project Architecture & Workflow Documentation
 
-Welcome to **EduSure** (IPS Academy Academic Portal) â€” an end-to-end peer-to-peer academic resource sharing, examination preparation, and campus community platform.
+Welcome to **EduSure** (IPS Academy Academic Portal) — an end-to-end peer-to-peer academic resource sharing, examination preparation, and campus community platform.
 
 This document provides a single-source-of-truth breakdown of the entire platform: architecture, end-to-end workflows, and an exhaustive guide to every single page in the system.
 
 ---
 
-## ðŸ“‘ Table of Contents
+## 📑 Table of Contents
 1. [Platform Overview & Tech Stack](#1-platform-overview--tech-stack)
 2. [High-Level Architecture](#2-high-level-architecture)
 3. [Page Directory & Count Summary (35 Pages)](#3-page-directory--count-summary)
@@ -33,7 +33,7 @@ This document provides a single-source-of-truth breakdown of the entire platform
 
 EduSure empowers engineering and college students to upload handwritten notes, access semester-wise Previous Year Questions (PYQs), prepare for campus placements, participate in peer Q&A, and earn coins for their academic contributions.
 
-### ðŸ’» Technology Stack:
+### 💻 Technology Stack:
 - **Frontend Framework**: [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
 - **Styling & Design System**: [Tailwind CSS](https://tailwindcss.com/) with full responsive breakpoints, dark/light mode toggle via `ThemeContext`
 - **Animations & Micro-interactions**: [Framer Motion](https://www.framer.com/motion/) & [Lenis](https://lenis.darkroom.engineering/) smooth scrolling
@@ -50,22 +50,22 @@ EduSure empowers engineering and college students to upload handwritten notes, a
 ## 2. High-Level Architecture
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                          CLIENT (React 19 + Vite)                      â”‚
-â”‚                                                                        â”‚
-â”‚  Landing Page  â”‚  Auth & Onboarding  â”‚  Student Portal â”‚  Admin Portal â”‚
-â”‚  (6 Chapters)  â”‚  (OTP / Google)     â”‚  (12 Pages)     â”‚  (14 Pages)   â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                    â”‚
-                â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                â–¼                                       â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚      EXPRESS API SERVER      â”‚        â”‚        SUPABASE PLATFORM       â”‚
-â”‚  â€¢ Nodemailer SMTP (OTP)     â”‚        â”‚  â€¢ PostgreSQL Database         â”‚
-â”‚  â€¢ Email policy toggle       â”‚        â”‚  â€¢ GoTrue Auth & Google OAuth  â”‚
-â”‚  â€¢ Search & filtering proxy  â”‚        â”‚  â€¢ Cloud Storage (PDF Buckets) â”‚
-â”‚  â€¢ Rate limiting & security  â”‚        â”‚  â€¢ Row-Level Security (RLS)    â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌────────────────────────────────────────────────────────────────────────┐
+│                          CLIENT (React 19 + Vite)                      │
+│                                                                        │
+│  Landing Page  │  Auth & Onboarding  │  Student Portal │  Admin Portal │
+│  (6 Chapters)  │  (OTP / Google)     │  (12 Pages)     │  (14 Pages)   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                ┌───────────────────┴───────────────────┐
+                ▼                                       ▼
+┌──────────────────────────────┐        ┌────────────────────────────────┐
+│      EXPRESS API SERVER      │        │        SUPABASE PLATFORM       │
+│  • Nodemailer SMTP (OTP)     │        │  • PostgreSQL Database         │
+│  • Email policy toggle       │        │  • GoTrue Auth & Google OAuth  │
+│  • Search & filtering proxy  │        │  • Cloud Storage (PDF Buckets) │
+│  • Rate limiting & security  │        │  • Row-Level Security (RLS)    │
+└──────────────────────────────┘        └────────────────────────────────┘
 ```
 
 ---
@@ -91,7 +91,7 @@ The landing page (`/`) is built as a single-page interactive portal featuring 6 
 
 1. **Chapter 1: Hero Section (`#home`)**
    - Welcomes students with bold headline and dynamic subtitle.
-   - Dual primary call-to-actions: `Explore Resources â†’` (routes to PYQs) and `Upload Notes â†’` (routes to Upload).
+   - Dual primary call-to-actions: `Explore Resources →` (routes to PYQs) and `Upload Notes →` (routes to Upload).
    - Live metrics summary cards: 131+ Students, 49 Verified Resources, 580 Coins Earned, 98% Pass Rate.
 2. **Chapter 2: Features Section (`#features`)**
    - Highlighting the core pillars: Verified PYQs, Placement Roadmaps, Peer Community, and Coins Reward Engine.
@@ -111,16 +111,16 @@ The landing page (`/`) is built as a single-page interactive portal featuring 6 
 ### A. Authentication & Security Flow
 ```
 User Enters Email
-       â”‚
-       â–¼
+       │
+       ▼
 Is Institutional? (@ipsacademy.org) OR Admin Allowed Non-College?
-       â”‚
-   â”œâ”€â”€ YES â”€â”€â–º Send 6-Digit OTP via Nodemailer SMTP
-   â”‚              â”‚
-   â”‚              â–¼
-   â”‚           User Verifies OTP â”€â”€â–º Token Created in Supabase Auth
-   â”‚
-   â””â”€â”€ Google OAuth â”€â”€â–º Redirects via /auth/callback â”€â”€â–º Checks User Record
+       │
+   ├── YES ──► Send 6-Digit OTP via Nodemailer SMTP
+   │              │
+   │              ▼
+   │           User Verifies OTP ──► Token Created in Supabase Auth
+   │
+   └── Google OAuth ──► Redirects via /auth/callback ──► Checks User Record
 ```
 - **Login Options**: Email + Password, 6-digit Email OTP, or 1-Click Google OAuth.
 - **Admin Bypass**: If the authenticated user has `role === 'admin'` or is a system root admin, they immediately route to `/admin/dashboard`.
@@ -128,29 +128,29 @@ Is Institutional? (@ipsacademy.org) OR Admin Allowed Non-College?
 
 ### B. Student Onboarding Workflow
 - **Mandatory First-Time Setup**: Once a student registers, they cannot browse protected student pages without completing onboarding.
-- **Step 1 â€” Basic Profile & Credentials**:
+- **Step 1 — Basic Profile & Credentials**:
   - Full Name, locked Phone & locked Enrollment number (preventing duplicates).
   - For Google OAuth users: automatic prompt to create and confirm a password.
-- **Step 2 â€” Academic Preferences**:
+- **Step 2 — Academic Preferences**:
   - Select Engineering Branch (CSE, IT, AIML, Mechanical, Civil, etc.), Current Year (1st, 2nd, 3rd, 4th), and favorite subjects.
-- **Step 3 â€” Welcome Reward**:
+- **Step 3 — Welcome Reward**:
   - Sets `onboarding_completed: true` in database, awards 25 bonus coins, and navigates to `/dashboard`.
 - **Admin Exemption**: Admin users never see the onboarding screen; any attempt to visit `/onboarding` automatically redirects to `/admin/dashboard`.
 
 ### C. Material Upload & Admin Moderation Workflow
 ```
 [Student /upload]
-Select File (PDF) â”€â”€â–º Fill Details (Branch, Subject, Exam Type) â”€â”€â–º Upload to Supabase Storage
-                                                                           â”‚
-                                                                           â–¼
+Select File (PDF) ──► Fill Details (Branch, Subject, Exam Type) ──► Upload to Supabase Storage
+                                                                           │
+                                                                           ▼
                                                                   Status: "pending"
-                                                                           â”‚
-                                  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                                  â–¼                                                                   â–¼
+                                                                           │
+                                  ┌────────────────────────────────────────┴──────────────────────────┐
+                                  ▼                                                                   ▼
                          [Admin Approves]                                                    [Admin Rejects]
-              Status â”€â”€â–º "approved"                                               Status â”€â”€â–º "rejected"
+              Status ──► "approved"                                               Status ──► "rejected"
               Material visible in /pyqs & /placement-materials                    Notification sent with reason
-              Coins: +4 on approval (1 on upload = 5 total)                              No coins rewarded
+              Coins credited to uploader (+5 coins)                              No coins rewarded
               Transaction logged in database
 ```
 
@@ -177,7 +177,7 @@ Select File (PDF) â”€â”€â–º Fill Details (Branch, Subject, Exam Ty
 ### G. Coins, Gamification & Rewards Redemption
 - **Coin Earning**:
   - Sign-up & Onboarding: +25 coins
-  - Material Upload & Approval: +5 coins total (+1 on upload submission, +4 on admin approval)
+  - Approved Material Upload: +50 coins
   - Peer Upvote milestones: +5 coins
 - **Reward Catalog (`/rewards`)**: Students redeem accrued coins for college merchandise, canteen coupons, mock interview vouchers, and premium certificates.
 - **Transaction Ledger**: Tracked under `/admin/transactions` with full debit/credit traceability.
@@ -316,7 +316,7 @@ Select File (PDF) â”€â”€â–º Fill Details (Branch, Subject, Exam Ty
 
 #### 23. Material Moderation & Approvals (`/admin/approvals`)
 - **File**: `client/src/pages/admin/AdminApprovals.jsx`
-- **Purpose**: Queue of pending student uploads. Admins preview PDFs and choose to Approve (credits +4 coins to uploader; 1 was credited on upload) or Reject (with feedback).
+- **Purpose**: Queue of pending student uploads. Admins preview PDFs and choose to Approve (dispatches +50 coins) or Reject (with feedback).
 - **Access**: Role: `admin`.
 
 #### 24. Materials Repository Management (`/admin/materials`)
@@ -336,7 +336,7 @@ Select File (PDF) â”€â”€â–º Fill Details (Branch, Subject, Exam Ty
 
 #### 27. User & Role Management (`/admin/users`)
 - **File**: `client/src/pages/admin/AdminUsers.jsx`
-- **Purpose**: Directory of all student and faculty accounts. Modify roles (`student` â†” `admin`), view activity, or suspend accounts.
+- **Purpose**: Directory of all student and faculty accounts. Modify roles (`student` ↔ `admin`), view activity, or suspend accounts.
 - **Access**: Role: `admin`.
 
 #### 28. Coin Transactions Ledger (`/admin/transactions`)
@@ -401,4 +401,3 @@ Select File (PDF) â”€â”€â–º Fill Details (Branch, Subject, Exam Ty
 - **Student Academic Suite**: 12 Pages
 - **Admin Management Suite**: 14 Pages
 - **Core Database Entities**: Users, Materials, PYQs, Forum Posts, Comments, Events, Tickets, Rewards, Transactions, Auth Policy.
-

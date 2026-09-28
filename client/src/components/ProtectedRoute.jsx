@@ -35,26 +35,15 @@ const ProtectedRoute = ({ children }) => {
                     const userEmail = sessionData.user.email?.toLowerCase().trim();
                     const userId = sessionData.user.id;
 
-                    // 1. Fetch profile by id first, or fallback to email
+                    // Fetch profile in a single fast indexed query
                     let profile = null;
-                    const { data: profileById } = await supabase
+                    const { data: fetchedProfile } = await supabase
                         .from('users')
                         .select('id, email, role, onboarding_completed, is_profile_complete')
-                        .eq('id', userId)
+                        .or(`id.eq.${userId},email.ilike.${userEmail}`)
                         .maybeSingle();
 
-                    if (profileById) {
-                        profile = profileById;
-                    } else if (userEmail) {
-                        const { data: profileByEmail } = await supabase
-                            .from('users')
-                            .select('id, email, role, onboarding_completed, is_profile_complete')
-                            .ilike('email', userEmail)
-                            .maybeSingle();
-                        if (profileByEmail) {
-                            profile = profileByEmail;
-                        }
-                    }
+                    profile = fetchedProfile;
 
                     if (!mounted) return;
 
@@ -65,11 +54,18 @@ const ProtectedRoute = ({ children }) => {
                                            isAdminEmail(userEmail) ||
                                            isAdminEmail(profile?.email);
 
+                    // Check if onboarding was recently completed in this session
+                    const justFinished = sessionStorage.getItem('edusure_onboarding_completed') === userId;
+                    const hasCompletedOnboarding = Boolean(profile?.onboarding_completed) || justFinished;
+
                     if (profile) {
                         if (isSessionAdmin && profile.role !== 'admin') {
                             profile.role = 'admin';
                             profile.onboarding_completed = true;
                             profile.is_profile_complete = true;
+                        }
+                        if (justFinished && !profile.onboarding_completed) {
+                            profile.onboarding_completed = true;
                         }
                         setUserProfile(profile);
                     } else {
@@ -77,7 +73,7 @@ const ProtectedRoute = ({ children }) => {
                             id: userId,
                             email: userEmail,
                             role: isSessionAdmin ? 'admin' : 'student',
-                            onboarding_completed: isSessionAdmin,
+                            onboarding_completed: isSessionAdmin || justFinished,
                             is_profile_complete: isSessionAdmin
                         });
                     }
@@ -145,7 +141,12 @@ const ProtectedRoute = ({ children }) => {
                     isAdminEmail(userEmail) ||
                     isAdminEmail(userProfile?.email);
 
-    const isOnboardingComplete = Boolean(userProfile?.onboarding_completed);
+    const isSessionOnboardingComplete = 
+        Boolean(userProfile?.onboarding_completed) ||
+        (session?.user?.id && sessionStorage.getItem('edusure_onboarding_completed') === session.user.id) ||
+        Boolean(location.state?.onboardingJustCompleted);
+
+    const isOnboardingComplete = Boolean(isSessionOnboardingComplete);
 
     if (isAdmin) {
         // Admin level users bypass student onboarding completely.

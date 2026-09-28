@@ -498,6 +498,12 @@ const Register = () => {
                   ) : null}
                 </div>
 
+                <div className="bg-blue-50/60 border border-blue-100/80 rounded-xl p-2.5 text-center">
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    💡 <span className="font-semibold text-slate-700">Pro-tip:</span> Code arrives in your <span className="text-blue-700 font-semibold">Primary Inbox</span>. If not visible within seconds, check your <span className="text-slate-800 font-semibold">Spam / Updates folder</span>.
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   disabled={isVerifyingOTP || !isOtpComplete()}

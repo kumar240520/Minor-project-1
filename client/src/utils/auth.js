@@ -396,6 +396,7 @@ export const ensureStudentProfile = async ({ id, email, fullName }) => {
         name: displayName,
         full_name: displayName, // Store in both fields for consistency
         role: 'student',
+        coins: 500,
       },
     ],
     upsertOptions,
@@ -413,6 +414,7 @@ export const ensureStudentProfile = async ({ id, email, fullName }) => {
           email,
           full_name: displayName,
           role: 'student',
+          coins: 500,
         },
       ],
       upsertOptions,
@@ -430,6 +432,7 @@ export const ensureStudentProfile = async ({ id, email, fullName }) => {
           email,
           name: displayName,
           role: 'student',
+          coins: 500,
         },
       ],
       upsertOptions,

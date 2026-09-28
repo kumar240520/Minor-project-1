@@ -15,6 +15,7 @@ import {
   Sparkles,
   ShieldCheck,
   Award,
+  Coins,
   Layers,
   Calendar,
   Check,
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getDisplayName, isAdminEmail } from '../utils/auth';
+import EduSureLoadingScreen from '../components/EduSureLoadingScreen';
 
 const POPULAR_BRANCHES = [
   'Computer Science & Eng (CSE)',
@@ -46,6 +48,24 @@ const YEAR_OPTIONS = [
   { value: '3rd Year', label: '3rd Year', sem: 'Sem 5 & 6' },
   { value: '4th Year', label: '4th Year', sem: 'Sem 7 & 8' },
 ];
+
+const SEMESTER_OPTIONS = [
+  'Semester 1',
+  'Semester 2',
+  'Semester 3',
+  'Semester 4',
+  'Semester 5',
+  'Semester 6',
+  'Semester 7',
+  'Semester 8'
+];
+
+const SEMESTERS_BY_YEAR = {
+  '1st Year': ['Semester 1', 'Semester 2'],
+  '2nd Year': ['Semester 3', 'Semester 4'],
+  '3rd Year': ['Semester 5', 'Semester 6'],
+  '4th Year': ['Semester 7', 'Semester 8']
+};
 
 const STUDY_SUBJECT_TAGS = [
   'Database Management (DBMS)',
@@ -72,6 +92,7 @@ const Onboarding = () => {
 
   // User state
   const [currentUser, setCurrentUser] = useState(null);
+  const [userCoins, setUserCoins] = useState(500);
   // Detect if the user authenticated via Google OAuth (needs password setup)
   const [isGoogleUser, setIsGoogleUser] = useState(false);
 
@@ -92,9 +113,10 @@ const Onboarding = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Step 2: Academic Specialization & Preferences
-  const [branch, setBranch] = useState('Computer Science & Eng (CSE)');
-  const [year, setYear] = useState('2nd Year');
+  // Step 2: Academic Specialization & Preferences (Mandatory fields)
+  const [branch, setBranch] = useState('');
+  const [year, setYear] = useState('');
+  const [semester, setSemester] = useState('');
   const [preferredSubjects, setPreferredSubjects] = useState([]);
   const [bio, setBio] = useState('');
 
@@ -103,48 +125,41 @@ const Onboarding = () => {
     const loadStudentData = async () => {
       try {
         setLoading(true);
-        const { data: { user }, error: authErr } = await supabase.auth.getUser();
-
-        if (authErr || !user) {
-          navigate('/login', { replace: true });
-          return;
+        // Fast local session check first (instant memory/storage), fallback to getUser()
+        let authUser = null;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          authUser = session.user;
+        } else {
+          const { data: { user }, error: authErr } = await supabase.auth.getUser();
+          if (authErr || !user) {
+            navigate('/login', { replace: true });
+            return;
+          }
+          authUser = user;
         }
 
-        setCurrentUser(user);
+        setCurrentUser(authUser);
 
         // Detect Google OAuth provider — they have no password and need to set one
-        const provider = user.app_metadata?.provider;
-        const identities = user.identities || [];
+        const provider = authUser.app_metadata?.provider;
+        const identities = authUser.identities || [];
         const isGoogle = provider === 'google' || identities.some(i => i.provider === 'google');
         setIsGoogleUser(isGoogle);
 
-        const userEmail = user.email?.toLowerCase().trim();
+        const userEmail = authUser.email?.toLowerCase().trim();
 
-        // Fetch DB row by id first, or by email
-        let profile = null;
-        const { data: profileById } = await supabase
+        // Fetch DB row in a single fast indexed query
+        const { data: profile } = await supabase
           .from('users')
           .select('*')
-          .eq('id', user.id)
+          .or(`id.eq.${authUser.id},email.ilike.${userEmail}`)
           .maybeSingle();
-
-        if (profileById) {
-          profile = profileById;
-        } else if (userEmail) {
-          const { data: profileByEmail } = await supabase
-            .from('users')
-            .select('*')
-            .ilike('email', userEmail)
-            .maybeSingle();
-          if (profileByEmail) {
-            profile = profileByEmail;
-          }
-        }
 
         // CRITERIA: If email has the role of admin, onboarding form must NEVER show up!
         const isAdmin = profile?.role === 'admin' || 
-                        user.app_metadata?.role === 'admin' ||
-                        user.user_metadata?.role === 'admin' ||
+                        authUser.app_metadata?.role === 'admin' ||
+                        authUser.user_metadata?.role === 'admin' ||
                         isAdminEmail(userEmail) ||
                         isAdminEmail(profile?.email);
 
@@ -155,17 +170,43 @@ const Onboarding = () => {
 
         // If already completed onboarding, redirect straight to dashboard
         if (profile?.onboarding_completed) {
+          if (authUser?.id) {
+            sessionStorage.setItem('edusure_onboarding_completed', authUser.id);
+          }
           navigate('/dashboard', { replace: true });
           return;
         }
 
+        if (profile?.coins !== undefined && profile?.coins !== null) {
+          setUserCoins(profile.coins);
+        }
+
         // Pre-fill available values
-        const resolvedName = profile?.full_name || 
-                             profile?.name || 
-                             user.user_metadata?.full_name || 
-                             user.user_metadata?.name || 
-                             '';
-        setFullName(resolvedName);
+        const emailStr = (user.email || profile?.email || '').toLowerCase().trim();
+        const emailPrefix = emailStr.split('@')[0];
+
+        const rawName = (profile?.full_name || 
+                         profile?.name || 
+                         user.user_metadata?.full_name || 
+                         user.user_metadata?.name || 
+                         '').trim();
+
+        // Helper to check if name is merely derived from the email prefix
+        const isPrefixName = (name, prefix) => {
+          if (!name || !prefix) return false;
+          const cleanN = name.toLowerCase().replace(/[\s._-]+/g, '');
+          const cleanP = prefix.toLowerCase().replace(/[\s._-]+/g, '');
+          return cleanN === cleanP || name.toLowerCase().trim() === prefix.toLowerCase().trim();
+        };
+
+        // For Google OAuth users: do not pre-fill if the name is just the email prefix
+        // Force the user to fill their actual real student name
+        if (isGoogle && isPrefixName(rawName, emailPrefix)) {
+          setFullName('');
+        } else {
+          setFullName(rawName);
+        }
+
         setEmail(user.email || profile?.email || '');
 
         // Pre-fill & lock fields that are already stored in the DB
@@ -180,6 +221,7 @@ const Onboarding = () => {
         }
         if (profile?.branch) setBranch(profile.branch);
         if (profile?.year) setYear(profile.year);
+        if (profile?.semester) setSemester(profile.semester);
         if (profile?.preferred_subjects && Array.isArray(profile.preferred_subjects)) {
           setPreferredSubjects(profile.preferred_subjects);
         }
@@ -209,23 +251,65 @@ const Onboarding = () => {
     );
   };
 
-  // Step 1: Save identity & basic info
+  const handleYearSelect = (selectedYear) => {
+    setYear(selectedYear);
+    const validSems = SEMESTERS_BY_YEAR[selectedYear] || [];
+    if (!semester || !validSems.includes(semester)) {
+      setSemester(validSems[0] || '');
+    }
+  };
+
+  const handleSemesterSelect = (selectedSem) => {
+    setSemester(selectedSem);
+    for (const [y, sems] of Object.entries(SEMESTERS_BY_YEAR)) {
+      if (sems.includes(selectedSem)) {
+        if (!year) setYear(y);
+        break;
+      }
+    }
+  };
+
+  // Step 1: Save identity & basic info (Mandatory: name, phone, college, password for Google users)
   const handleStep1Submit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    if (!fullName.trim()) {
-      setError('Please provide your full legal or college name.');
+    const cleanName = fullName.trim();
+    if (!cleanName) {
+      setError('Please provide your full legal student name (required).');
       return;
     }
 
-    if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      setError('Please provide a valid 10-digit mobile number.');
+    const emailStr = (email || currentUser?.email || '').toLowerCase().trim();
+    const emailPrefix = emailStr.split('@')[0];
+    const cleanNameNormalized = cleanName.toLowerCase().replace(/[\s._-]+/g, '');
+    const cleanPrefixNormalized = emailPrefix.replace(/[\s._-]+/g, '');
+
+    // For Google OAuth users: name cannot be the email prefix or contain @
+    if (isGoogleUser) {
+      if (
+        cleanNameNormalized === cleanPrefixNormalized ||
+        cleanName.toLowerCase() === emailPrefix ||
+        cleanName.includes('@')
+      ) {
+        setError('Please enter your actual full name. Using your email prefix or username is not allowed.');
+        return;
+      }
+    }
+
+    if (cleanName.length < 3) {
+      setError('Full student name must be at least 3 characters long.');
+      return;
+    }
+
+    const cleanPhone = phone.trim().replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      setError('Please provide a valid 10-digit mobile number (required).');
       return;
     }
 
     if (!college.trim()) {
-      setError('Please enter your college or institute name.');
+      setError('Please enter your college or institute name (required).');
       return;
     }
 
@@ -249,14 +333,14 @@ const Onboarding = () => {
         if (pwErr) throw new Error(`Password update failed: ${pwErr.message}`);
       }
 
-      const sanitizedPhone = phone.trim();
+      const sanitizedPhone = cleanPhone;
       const sanitizedEnrollment = enrollmentNumber.trim();
 
       const { error: updateErr } = await supabase
         .from('users')
         .update({
-          full_name: fullName.trim(),
-          name: fullName.trim(),
+          full_name: cleanName,
+          name: cleanName,
           phone: sanitizedPhone,
           college: college.trim(),
           enrollment_number: sanitizedEnrollment,
@@ -277,20 +361,36 @@ const Onboarding = () => {
     }
   };
 
-  // Step 2: Save academic preferences or Skip
-  const handleStep2Submit = async (isSkipping = false) => {
+  // Step 2: Save academic details (Mandatory: branch, year, semester - NO SKIPPING)
+  const handleStep2Submit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     setError(null);
+
+    if (!branch) {
+      setError('Please select your academic branch / department (required).');
+      return;
+    }
+
+    if (!year) {
+      setError('Please select your current year of study (required).');
+      return;
+    }
+
+    if (!semester) {
+      setError('Please select your current semester (required).');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const isComplete = !isSkipping && Boolean(branch && year && preferredSubjects.length > 0);
-
       const updatePayload = {
-        branch: branch || null,
-        year: year || null,
+        branch: branch,
+        year: year,
+        semester: semester,
         preferred_subjects: preferredSubjects,
         bio: bio.trim() || null,
-        is_profile_complete: isComplete,
+        is_profile_complete: true,
         onboarding_step: 3,
         updated_at: new Date().toISOString()
       };
@@ -306,7 +406,7 @@ const Onboarding = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error('Step 2 save error:', err);
-      setError(err.message || 'Failed to save preferences. Please try again.');
+      setError(err.message || 'Failed to save academic details. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -318,15 +418,14 @@ const Onboarding = () => {
     setError(null);
 
     try {
-      // Award initial welcome bonus of 50 EduCoins if coins are currently 0
-      const { data: currentProfile } = await supabase
-        .from('users')
-        .select('coins')
-        .eq('id', currentUser.id)
-        .single();
+      // Award welcome bonus of 500 EduCoins for any student completing onboarding
+      const currentCoins = Number(userCoins || 0);
+      const updatedCoins = (currentCoins === 0 || currentCoins <= 50) ? 500 : currentCoins;
 
-      const currentCoins = currentProfile?.coins || 0;
-      const updatedCoins = currentCoins === 0 ? 50 : currentCoins;
+      // Set session flag so ProtectedRoute immediately recognizes onboarding is complete
+      if (currentUser?.id) {
+        sessionStorage.setItem('edusure_onboarding_completed', currentUser.id);
+      }
 
       const { error: finalErr } = await supabase
         .from('users')
@@ -339,10 +438,16 @@ const Onboarding = () => {
 
       if (finalErr) throw finalErr;
 
+      // Smooth delay so the user experiences the circular loading animation transition
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
       // Navigate to dashboard with replacement to prevent back navigation into onboarding
-      navigate('/dashboard', { replace: true });
+      navigate('/dashboard', { replace: true, state: { onboardingJustCompleted: true } });
     } catch (err) {
       console.error('Finish onboarding error:', err);
+      if (currentUser?.id) {
+        sessionStorage.removeItem('edusure_onboarding_completed');
+      }
       setError(err.message || 'Could not finalize registration. Please click again.');
       setSubmitting(false);
     }
@@ -359,14 +464,19 @@ const Onboarding = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-            Setting up your student profile...
-          </p>
-        </div>
-      </div>
+      <EduSureLoadingScreen
+        title="Setting Up Your Student Profile"
+        subtitle="Verifying credentials & initializing your EduSure workspace..."
+      />
+    );
+  }
+
+  if (submitting && currentStep === 3) {
+    return (
+      <EduSureLoadingScreen
+        title="Entering Your Student Dashboard"
+        subtitle="Crediting +500 EduCoins & opening command center..."
+      />
     );
   }
 
@@ -512,6 +622,11 @@ const Onboarding = () => {
                       className="w-full pl-10 pr-4 py-3 text-sm bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-slate-900 dark:text-slate-100"
                     />
                   </div>
+                  {isGoogleUser && (
+                    <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      ⚠️ Please enter your official full name (email username/prefix is not allowed).
+                    </p>
+                  )}
                 </div>
 
                 {/* Email Address (Pre-filled from auth, locked for consistency) */}
@@ -771,7 +886,7 @@ const Onboarding = () => {
                 </div>
               </div>
 
-              {/* Current Year & Semester */}
+              {/* Current Year Selection */}
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 mb-2.5">
                   Current Year of Study <span className="text-rose-500">*</span>
@@ -781,7 +896,7 @@ const Onboarding = () => {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setYear(opt.value)}
+                      onClick={() => handleYearSelect(opt.value)}
                       className={`p-3 rounded-xl border text-center transition-all ${
                         year === opt.value
                           ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
@@ -794,6 +909,47 @@ const Onboarding = () => {
                       </div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Current Semester Selection (Mandatory) */}
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <label className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Current Semester <span className="text-rose-500">*</span>
+                  </label>
+                  {year && (
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                      Standard for {year}: {SEMESTERS_BY_YEAR[year]?.join(' or ')}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {SEMESTER_OPTIONS.map((sem) => {
+                    const isSelected = semester === sem;
+                    const isForCurrentYear = year ? SEMESTERS_BY_YEAR[year]?.includes(sem) : false;
+                    return (
+                      <button
+                        key={sem}
+                        type="button"
+                        onClick={() => handleSemesterSelect(sem)}
+                        className={`p-3 rounded-xl border text-center transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs ring-2 ring-blue-600/30'
+                            : isForCurrentYear
+                            ? 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200 font-bold hover:border-blue-400'
+                            : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="text-xs sm:text-sm font-bold">{sem}</div>
+                        {isForCurrentYear && !isSelected && (
+                          <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5">
+                            Recommended
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -843,7 +999,7 @@ const Onboarding = () => {
                 />
               </div>
 
-              {/* Action Buttons: Back, Skip, Complete */}
+              {/* Action Buttons: Back, Complete (NO SKIPPING) */}
               <div className="pt-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   type="button"
@@ -853,26 +1009,15 @@ const Onboarding = () => {
                   <ArrowLeft className="w-4 h-4" /> Back to Step 1
                 </button>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto order-1 sm:order-2">
-                  <button
-                    type="button"
-                    onClick={() => handleStep2Submit(true)}
-                    disabled={submitting}
-                    className="flex-1 sm:flex-none px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    Skip for now
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleStep2Submit(false)}
-                    disabled={submitting}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50"
-                  >
-                    {submitting ? 'Saving...' : 'Save & Generate Pass'}
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleStep2Submit}
+                  disabled={submitting}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50 order-1 sm:order-2"
+                >
+                  {submitting ? 'Saving Details...' : 'Save & Generate Pass'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
 
             </div>
@@ -898,7 +1043,7 @@ const Onboarding = () => {
                 Welcome to EduSure, {fullName || 'Student'}!
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-lg mx-auto leading-relaxed">
-                Your student profile is active. You have been credited with a welcome bonus of <span className="font-bold text-amber-600 dark:text-amber-400">+50 EduCoins</span>.
+                Your student profile is active. You have been credited with a welcome bonus of <span className="font-bold text-amber-600 dark:text-amber-400">+500 EduCoins</span>.
               </p>
             </div>
 
@@ -928,18 +1073,18 @@ const Onboarding = () => {
                       Verified Member
                     </span>
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
-                      <Award className="w-3 h-3 text-amber-400" /> +50 Coins
+                      <Coins className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> +500 Coins
                     </span>
                   </div>
                 </div>
 
                 {/* Student Details Grid on Pass */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
                   <div>
                     <div className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
                       Student Name
                     </div>
-                    <div className="text-base font-bold text-white mt-0.5 truncate">
+                    <div className="text-sm sm:text-base font-bold text-white mt-0.5 truncate">
                       {fullName || 'Student'}
                     </div>
                   </div>
@@ -955,9 +1100,18 @@ const Onboarding = () => {
 
                   <div>
                     <div className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+                      Year &amp; Semester
+                    </div>
+                    <div className="text-xs sm:text-sm font-bold text-white mt-0.5 truncate">
+                      {year || '1st Year'} • {semester || 'Semester 1'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
                       Enrollment / Roll No
                     </div>
-                    <div className="text-xs sm:text-sm font-bold text-white mt-0.5 uppercase">
+                    <div className="text-xs sm:text-sm font-bold text-white mt-0.5 uppercase truncate">
                       {enrollmentNumber || 'PENDING'}
                     </div>
                   </div>

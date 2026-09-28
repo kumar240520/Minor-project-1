@@ -31,6 +31,7 @@ import {
   DashboardBadge,
   FeedbackState
 } from '../dashboard';
+import EduSureLoadingScreen from '../EduSureLoadingScreen';
 
 const YEAR_OPTIONS = [
   { value: '1st Year', label: '1st Year (Freshman)', sems: ['Semester 1', 'Semester 2'] },
@@ -75,18 +76,26 @@ export const StudentProfileView = ({ isEmbedded = false }) => {
   const fetchProfileData = async () => {
     try {
       setLoading(true);
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error('Not authenticated');
+      let authUser = null;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        authUser = session.user;
+      } else {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) throw new Error('Not authenticated');
+        authUser = user;
+      }
 
+      const userEmail = authUser.email?.toLowerCase().trim();
       const { data: profile, error: dbError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user.id)
+        .or(`id.eq.${authUser.id},email.ilike.${userEmail}`)
         .maybeSingle();
 
       if (dbError) throw dbError;
 
-      const merged = { ...user, ...profile };
+      const merged = { ...authUser, ...profile };
       setUserData(merged);
 
       // Pre-fill editable state
@@ -197,6 +206,14 @@ export const StudentProfileView = ({ isEmbedded = false }) => {
   };
 
   if (loading) {
+    if (!isEmbedded) {
+      return (
+        <EduSureLoadingScreen
+          title="Loading Student Profile"
+          subtitle="Fetching your verified academic credentials and records..."
+        />
+      );
+    }
     return (
       <FeedbackState
         type="loading"

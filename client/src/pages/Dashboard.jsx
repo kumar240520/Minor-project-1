@@ -49,27 +49,15 @@ const Dashboard = () => {
         // 2. Fetch User Profile Data
         let profileData = null;
         try {
-          const result = await supabase
+          const userEmail = user.email?.toLowerCase()?.trim();
+          const { data } = await supabase
             .from('users')
             .select('*')
-            .eq('id', user.id)
+            .or(`id.eq.${user.id},email.ilike.${userEmail}`)
             .maybeSingle();
-          profileData = result.data;
+          profileData = data;
         } catch (err) {
-          console.warn('Profile fetch warning by id:', err);
-        }
-
-        if (!profileData && user.email) {
-          try {
-            const result = await supabase
-              .from('users')
-              .select('*')
-              .ilike('email', user.email)
-              .maybeSingle();
-            profileData = result.data;
-          } catch (err) {
-            console.warn('Profile fetch warning by email:', err);
-          }
+          console.warn('Dashboard profile fetch warning:', err);
         }
 
         const userEmail = (profileData?.email || user.email)?.toLowerCase()?.trim();
@@ -94,15 +82,21 @@ const Dashboard = () => {
               email: user.email,
               name: getDisplayName(user, 'Student'),
               role: 'student',
-              coins: 0
+              coins: 500
             };
           }
+        }
+
+        // Check if user recently completed onboarding in this session
+        const justFinishedOnboarding = sessionStorage.getItem('edusure_onboarding_completed') === user.id;
+        if (justFinishedOnboarding && profileData) {
+          profileData.onboarding_completed = true;
         }
 
         setUserData(profileData);
 
         // Immediate redirect if student onboarding is not completed
-        if (profileData && profileData.onboarding_completed !== true) {
+        if (profileData && profileData.onboarding_completed !== true && !justFinishedOnboarding) {
           navigate('/onboarding', { replace: true });
           return;
         }

@@ -235,6 +235,7 @@ const generateEmailTemplate = ({
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>${subject}</title>
     <!--[if mso]>
     <style type="text/css">
@@ -243,6 +244,10 @@ const generateEmailTemplate = ({
     <![endif]-->
 </head>
 <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%;">
+    <!-- Hidden preheader text for clean inbox snippet preview -->
+    <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; max-width: 0px; opacity: 0;">
+        ${formattedContent.replace(/\s+/g, ' ').substring(0, 150)}
+    </div>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f1f5f9; padding: 30px 10px;">
         <tr>
             <td align="center">
@@ -371,9 +376,10 @@ exports.sendBulkEmail = async (req, res) => {
  
         const { user: smtpUser } = getSmtpCredentials();
         const transporter = createTransporter();
-        const fromAddress = (process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes('edusure24'))
-            ? process.env.EMAIL_FROM
-            : `EduSure <${smtpUser}>`;
+        const fromAddress = {
+            name: 'EduSure',
+            address: smtpUser
+        };
  
         // Verify SMTP connection before sending
         try {
@@ -409,9 +415,9 @@ exports.sendBulkEmail = async (req, res) => {
             });
         }
  
-        // Gmail allows up to ~500/day on free tier — send in batches of 10
-        // with a short gap to respect rate limits while staying within serverless timeout
-        const batchSize = 10;
+        // Gmail SMTP deliverability optimization:
+        // Use batch size of 5 with 500ms delay to keep within connection rate limits and avoid anti-spam flagging
+        const batchSize = 5;
         const batches = [];
  
         for (let i = 0; i < recipients.length; i += batchSize) {
@@ -445,9 +451,8 @@ exports.sendBulkEmail = async (req, res) => {
                         html: htmlTemplate,
                         headers: {
                             'List-Unsubscribe': `<mailto:${smtpUser}?subject=Unsubscribe%20${encodeURIComponent(recipientEmail)}>`,
-                            'X-Entity-Ref-ID': `${campaignId}-${Date.now()}`,
-                            'X-Mailer': 'EduSure Platform Mailer',
-                            'Precedence': 'bulk'
+                            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                            'X-Entity-Ref-ID': `${campaignId}-${Date.now()}`
                         }
                     }).then(() => {
                         console.log(`[SMTP] ✓ Delivered to: ${recipientEmail}`);
@@ -468,9 +473,9 @@ exports.sendBulkEmail = async (req, res) => {
                 }
             }
  
-            // Short delay between batches to respect Gmail rate limits
+            // Delay between batches to respect Gmail rate limits and avoid spam heuristic flagging
             if (i < batches.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 200));
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
  
@@ -595,9 +600,10 @@ exports.sendTestEmail = async (req, res) => {
 
         const { user: smtpUser } = getSmtpCredentials();
         const transporter = createTransporter();
-        const fromAddress = (process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes('edusure24'))
-            ? process.env.EMAIL_FROM
-            : `EduSure <${smtpUser}>`;
+        const fromAddress = {
+            name: 'EduSure',
+            address: smtpUser
+        };
 
         const { htmlTemplate, plainTextVersion } = generateEmailTemplate({
             subject: `[TEST] ${subject}`,
@@ -615,10 +621,7 @@ exports.sendTestEmail = async (req, res) => {
             to: testEmail,
             subject: `[Test] ${subject}`,
             text: plainTextVersion,
-            html: htmlTemplate,
-            headers: {
-                'X-Mailer': 'EduSure Platform Mailer'
-            }
+            html: htmlTemplate
         });
 
         res.status(200).json({

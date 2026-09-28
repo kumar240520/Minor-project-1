@@ -205,7 +205,7 @@ exports.verifyRegistrationOTP = async (req, res) => {
                 name: name.trim(),
                 full_name: name.trim(),
                 role: 'student',
-                coins: 50,
+                coins: 500,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             });
